@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 
 class AppSettings {
   final bool notificationEnabled;
@@ -23,6 +24,9 @@ class AppSettings {
     };
   }
 
+  // JSON 직렬화
+  String toJson() => json.encode(toMap());
+
   // SharedPreferences에서 데이터를 가져올 때 사용할 팩토리 메서드
   factory AppSettings.fromMap(Map<String, dynamic> map) {
     return AppSettings(
@@ -37,6 +41,10 @@ class AppSettings {
       ),
     );
   }
+
+  // JSON 역직렬화
+  factory AppSettings.fromJson(String source) => 
+      AppSettings.fromMap(json.decode(source) as Map<String, dynamic>);
 
   // 설정 복사본 생성 (상태 업데이트 시 사용)
   AppSettings copyWith({

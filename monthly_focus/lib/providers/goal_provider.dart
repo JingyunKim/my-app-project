@@ -2,21 +2,53 @@ import 'package:flutter/material.dart';
 import '../models/goal.dart';
 import '../models/daily_check.dart';
 import '../services/database_service.dart';
+import '../services/storage_service.dart';
 
 class GoalProvider with ChangeNotifier {
   final DatabaseService _db = DatabaseService();
+  final StorageService _storage = StorageService();
   List<Goal> _monthlyGoals = [];
+  List<Goal> _nextMonthGoals = [];  // 다음 달 목표 저장
   List<DailyCheck> _todayChecks = [];
   DateTime _currentMonth = DateTime.now();
   Map<DateTime, List<DailyCheck>> _dailyChecksCache = {};
+  Set<DateTime> _loadingDates = {};
+
+  // [테스트용] 현재 날짜 설정
+  DateTime _testCurrentDate = DateTime.now();
+  DateTime get testCurrentDate => _testCurrentDate;
+  
+  // [테스트용] 현재 날짜 변경
+  Future<void> setTestCurrentDate(DateTime date) async {
+    _testCurrentDate = date;
+    _currentMonth = DateTime(date.year, date.month);
+    
+    // 2025년 7월인 경우 샘플 데이터 추가
+    if (date.year == 2025 && date.month == 7) {
+      await _db.insertJuly2025SampleGoals();
+    }
+    
+    await loadMonthlyGoals();
+    await loadNextMonthGoals();
+    await loadTodayChecks();
+    notifyListeners();
+  }
 
   List<Goal> get monthlyGoals => _monthlyGoals;
+  List<Goal> get nextMonthGoals => _nextMonthGoals;  // 다음 달 목표 getter
   List<DailyCheck> get todayChecks => _todayChecks;
   DateTime get currentMonth => _currentMonth;
 
   // 현재 월의 목표 로드
   Future<void> loadMonthlyGoals() async {
     _monthlyGoals = await _db.getGoalsByMonth(_currentMonth);
+    notifyListeners();
+  }
+
+  // 다음 달 목표 로드
+  Future<void> loadNextMonthGoals() async {
+    final nextMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
+    _nextMonthGoals = await _db.getGoalsByMonth(nextMonth);
     notifyListeners();
   }
 
@@ -37,11 +69,31 @@ class GoalProvider with ChangeNotifier {
 
   // 비동기로 데이터 로드 및 캐시 업데이트
   Future<List<DailyCheck>> loadDailyChecks(DateTime date) async {
-    final checks = await _db.getDailyChecksByDate(date);
     final key = DateTime(date.year, date.month, date.day);
-    _dailyChecksCache[key] = checks;
-    notifyListeners();
-    return checks;
+    
+    // 이미 로딩 중이거나 캐시에 있는 경우 캐시된 데이터 반환
+    if (_loadingDates.contains(key) || _dailyChecksCache.containsKey(key)) {
+      return _dailyChecksCache[key] ?? [];
+    }
+
+    _loadingDates.add(key);
+    
+    try {
+      final checks = await _db.getDailyChecksByDate(date);
+      _dailyChecksCache[key] = checks;
+      notifyListeners();
+      return checks;
+    } finally {
+      _loadingDates.remove(key);
+    }
+  }
+
+  // 캐시 정리
+  void clearOldCache() {
+    final now = DateTime.now();
+    final oneMonthAgo = DateTime(now.year, now.month - 1, now.day);
+    
+    _dailyChecksCache.removeWhere((date, _) => date.isBefore(oneMonthAgo));
   }
 
   // 특정 날짜의 체크 상태 조회 (달력용)
@@ -113,7 +165,24 @@ class GoalProvider with ChangeNotifier {
   // 다음 달 목표 설정 가능 여부 확인
   bool canSetNextMonthGoals() {
     final now = DateTime.now();
-    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
-    return now.day == lastDayOfMonth.day;
+    final installDate = _storage.getInstallDate();
+    
+    // 설치 당월인 경우 항상 설정 가능
+    if (now.year == installDate.year && now.month == installDate.month) {
+      return true;
+    }
+    
+    // 25일 이후부터 설정 가능
+    return now.day >= 25;
+  }
+
+  // 특정 월의 목표 조회
+  Future<List<Goal>> getGoalsByMonth(DateTime month) async {
+    return await _db.getGoalsByMonth(month);
+  }
+
+  // [테스트용] 2025년 7월 목표 로드
+  Future<void> loadJuly2025Goals() async {
+    await _db.insertJuly2025SampleGoals();
   }
 } 

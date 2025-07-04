@@ -87,6 +87,17 @@ class _GoalSettingScreenState extends State<GoalSettingScreen> {
                 ),
               );
             }),
+            const Spacer(),
+            const Text(
+              '구체적이고 측정 가능한 목표를 설정해보세요\n예) 매일 30분 독서하기, 주 3회 운동하기',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),

@@ -75,6 +75,52 @@ class DatabaseService {
     return List.generate(maps.length, (i) => Goal.fromMap(maps[i]));
   }
 
+  // [테스트용] 2025년 7월 샘플 목표 추가
+  Future<void> insertJuly2025SampleGoals() async {
+    final db = await database;
+    final july2025 = DateTime(2025, 7, 1);
+    
+    // 기존 데이터 삭제
+    await db.delete(
+      'goals',
+      where: 'month = ?',
+      whereArgs: [july2025.toIso8601String()],
+    );
+
+    // 샘플 목표 데이터
+    final sampleGoals = [
+      Goal(
+        month: july2025,
+        position: 1,
+        title: '제주도 한달 살기 준비하기',
+        emoji: '🌴',
+      ),
+      Goal(
+        month: july2025,
+        position: 2,
+        title: '매일 바다 수영 30분',
+        emoji: '🏊',
+      ),
+      Goal(
+        month: july2025,
+        position: 3,
+        title: '로컬 맛집 20곳 탐방',
+        emoji: '🍱',
+      ),
+      Goal(
+        month: july2025,
+        position: 4,
+        title: '제주 사투리 마스터하기',
+        emoji: '🗣️',
+      ),
+    ];
+
+    // 목표 추가
+    for (var goal in sampleGoals) {
+      await insertGoal(goal);
+    }
+  }
+
   // 체크 관련 메서드
   Future<int> insertDailyCheck(DailyCheck check) async {
     final db = await database;

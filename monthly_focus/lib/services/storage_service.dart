@@ -4,7 +4,10 @@ import '../models/app_settings.dart';
 
 class StorageService {
   static final StorageService _instance = StorageService._internal();
-  static SharedPreferences? _prefs;
+  static const String _settingsKey = 'app_settings';
+  static const String _installDateKey = 'install_date';  // 설치일 저장 키
+  static const String _welcomeShownKey = 'welcome_guide_shown';  // 가이드 표시 여부 키
+  late SharedPreferences _prefs;
 
   factory StorageService() {
     return _instance;
@@ -14,34 +17,37 @@ class StorageService {
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    
+    // 앱 최초 설치 시 현재 날짜 저장
+    if (!_prefs.containsKey(_installDateKey)) {
+      await _prefs.setString(_installDateKey, DateTime.now().toIso8601String());
+    }
+  }
+
+  // 앱 최초 설치일 조회
+  DateTime getInstallDate() {
+    final dateStr = _prefs.getString(_installDateKey);
+    return dateStr != null ? DateTime.parse(dateStr) : DateTime.now();
   }
 
   // 앱 설정 저장
   Future<void> saveSettings(AppSettings settings) async {
-    final prefs = await SharedPreferences.getInstance();
-    final map = settings.toMap();
-    
-    await prefs.setBool('notification_enabled', map['notification_enabled']);
-    await prefs.setInt('notification_hour', map['notification_hour']);
-    await prefs.setInt('notification_minute', map['notification_minute']);
-    await prefs.setInt('reset_hour', map['reset_hour']);
-    await prefs.setInt('reset_minute', map['reset_minute']);
+    await _prefs.setString(_settingsKey, settings.toJson());
   }
 
   // 앱 설정 로드
-  Future<AppSettings> loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    return AppSettings(
-      notificationEnabled: prefs.getBool('notification_enabled') ?? true,
-      notificationTime: TimeOfDay(
-        hour: prefs.getInt('notification_hour') ?? 23,
-        minute: prefs.getInt('notification_minute') ?? 0,
-      ),
-      resetTime: TimeOfDay(
-        hour: prefs.getInt('reset_hour') ?? 2,
-        minute: prefs.getInt('reset_minute') ?? 0,
-      ),
-    );
+  AppSettings loadSettings() {
+    final json = _prefs.getString(_settingsKey);
+    return json != null ? AppSettings.fromJson(json) : AppSettings();
+  }
+
+  // 가이드 표시 여부 확인
+  bool isWelcomeGuideShown() {
+    return _prefs.getBool(_welcomeShownKey) ?? false;
+  }
+
+  // 가이드 표시 완료 저장
+  Future<void> markWelcomeGuideAsShown() async {
+    await _prefs.setBool(_welcomeShownKey, true);
   }
 } 

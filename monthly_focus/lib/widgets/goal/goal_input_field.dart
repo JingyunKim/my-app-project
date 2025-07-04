@@ -1,7 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_emoji/flutter_emoji.dart';
+import 'dart:math';
 
 class GoalInputField extends StatelessWidget {
+  static const List<String> commonEmojis = [
+    // 성취 & 동기부여
+    '🎯', '⭐', '🏆', '✨', '💪', '🌟', '🚀', '✅', '📈',
+    // 운동 & 건강
+    '🏃', '🧘', '🏋️', '⚽', '🎾', '🚴', '🏊', '🥗', '💪',
+    // 학습 & 성장
+    '📚', '✏️', '💡', '🎓', '💻', '📝', '🔍', '📱', '🗂️',
+    // 취미 & 여가
+    '🎨', '🎵', '🎮', '📷', '🎬', '🎸', '🎹', '🎭', '🎪',
+    // 생활 & 습관
+    '🌱', '⏰', '🌞', '🌙', '📋', '🏠', '🧘', '🍵', '😊'
+  ];
+
   final TextEditingController controller;
   final int position;
   final String? emoji;
@@ -15,13 +29,13 @@ class GoalInputField extends StatelessWidget {
     required this.onEmojiSelected,
   });
 
-  void _showEmojiPicker(BuildContext context) async {
-    final parser = EmojiParser();
-    final List<String> commonEmojis = [
-      '✨', '🎯', '💪', '📚', '🏃', '🎨', '💡', '🌱',
-      '🎵', '✍️', '🧘', '🏋️', '🎮', '👨‍💻', '🎬', '📝'
-    ];
+  // 랜덤 이모지 선택
+  static String getRandomEmoji() {
+    final random = Random();
+    return commonEmojis[random.nextInt(commonEmojis.length)];
+  }
 
+  void _showEmojiPicker(BuildContext context) async {
     final String? selected = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -63,7 +77,7 @@ class GoalInputField extends StatelessWidget {
         IconButton(
           onPressed: () => _showEmojiPicker(context),
           icon: Text(
-            emoji ?? '😊',
+            emoji ?? getRandomEmoji(),
             style: const TextStyle(fontSize: 24),
           ),
         ),

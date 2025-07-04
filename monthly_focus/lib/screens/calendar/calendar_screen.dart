@@ -16,13 +16,44 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   late final ValueNotifier<List<DailyCheck>> _selectedChecks;
+  List<Goal> _currentMonthGoals = [];  // 현재 보고 있는 달의 목표
 
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
     _selectedChecks = ValueNotifier([]);
-    _loadSelectedDayChecks();
+    _loadMonthData();
+  }
+
+  // 선택된 월의 데이터 로드
+  Future<void> _loadMonthData() async {
+    final provider = context.read<GoalProvider>();
+    
+    // 2025년 7월 샘플 데이터 체크
+    if (_focusedDay.year == 2025 && _focusedDay.month == 7) {
+      await provider.loadJuly2025Goals();
+    }
+    
+    // 해당 월의 목표 로드
+    final goals = await provider.getGoalsByMonth(_focusedDay);
+    setState(() {
+      _currentMonthGoals = goals;
+    });
+
+    // 해당 월의 체크 데이터 미리 로드
+    final firstDay = DateTime(_focusedDay.year, _focusedDay.month, 1);
+    final lastDay = DateTime(_focusedDay.year, _focusedDay.month + 1, 0);
+
+    for (var day = firstDay; 
+         day.isBefore(lastDay.add(const Duration(days: 1))); 
+         day = day.add(const Duration(days: 1))) {
+      await provider.loadDailyChecks(day);
+    }
+    
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -48,17 +79,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
       body: Consumer<GoalProvider>(
         builder: (context, provider, child) {
-          final goals = provider.monthlyGoals;
-
           return Column(
             children: [
-              _buildMonthlyGoals(goals),
+              _buildMonthlyGoals(),
               TableCalendar<DailyCheck>(
                 firstDay: DateTime.utc(2024, 1, 1),
                 lastDay: DateTime.utc(2025, 12, 31),
                 focusedDay: _focusedDay,
                 selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                 calendarFormat: CalendarFormat.month,
+                availableCalendarFormats: const {
+                  CalendarFormat.month: '월간',
+                },
                 eventLoader: (day) => provider.getCachedDailyChecks(day),
                 onDaySelected: (selectedDay, focusedDay) {
                   setState(() {
@@ -66,6 +98,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     _focusedDay = focusedDay;
                   });
                   _loadSelectedDayChecks();
+                },
+                onPageChanged: (focusedDay) {
+                  setState(() {
+                    _focusedDay = focusedDay;
+                  });
+                  _loadMonthData();
                 },
                 calendarStyle: const CalendarStyle(
                   markersMaxCount: 4,
@@ -88,9 +126,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
                     return ListView.builder(
                       padding: const EdgeInsets.all(16),
-                      itemCount: goals.length,
+                      itemCount: _currentMonthGoals.length,
                       itemBuilder: (context, index) {
-                        final goal = goals[index];
+                        final goal = _currentMonthGoals[index];
                         final check = checks.firstWhere(
                           (check) => check.goalId == goal.id,
                           orElse: () => DailyCheck(
@@ -131,7 +169,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildMonthlyGoals(List<Goal> goals) {
+  Widget _buildMonthlyGoals() {
     return Container(
       padding: const EdgeInsets.all(16),
       color: Theme.of(context).colorScheme.primaryContainer,
@@ -146,15 +184,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: goals.map((goal) {
-              return Chip(
-                avatar: Text(goal.emoji ?? '🎯'),
-                label: Text(goal.title),
-              );
-            }).toList(),
-          ),
+          if (_currentMonthGoals.isEmpty)
+            const Text(
+              '설정된 목표가 없습니다',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              children: _currentMonthGoals.map((goal) {
+                return Chip(
+                  avatar: Text(goal.emoji ?? '🎯'),
+                  label: Text(goal.title),
+                );
+              }).toList(),
+            ),
         ],
       ),
     );
