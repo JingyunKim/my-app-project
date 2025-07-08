@@ -1,9 +1,18 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+/*
+ * 위젯 테스트: Monthly Focus 앱의 위젯 테스트
+ * 
+ * 테스트 범위:
+ * - 앱 실행 및 초기화
+ * - 목표 입력 위젯
+ * - 목표 체크 카드
+ * - 달력 위젯
+ * 
+ * 테스트 케이스:
+ * - 앱 시작 시 정상 렌더링
+ * - 목표 입력 유효성 검사
+ * - 체크 상태 토글 동작
+ * - 달력 날짜 선택
+ */
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

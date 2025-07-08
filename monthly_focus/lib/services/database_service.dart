@@ -1,3 +1,16 @@
+/*
+ * DatabaseService: SQLite 데이터베이스 관리
+ * 
+ * 주요 기능:
+ * - 목표(goals) 테이블 관리: 월간 목표 데이터 CRUD
+ * - 체크(daily_checks) 테이블 관리: 일일 체크 데이터 CRUD
+ * - 데이터베이스 초기화 및 마이그레이션
+ * 
+ * 테이블 구조:
+ * - goals: id, month, position, title, emoji, created_at
+ * - daily_checks: id, goal_id, date, is_completed, checked_at
+ */
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/goal.dart';

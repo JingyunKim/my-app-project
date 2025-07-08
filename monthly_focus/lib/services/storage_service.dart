@@ -1,3 +1,18 @@
+/*
+ * StorageService: 앱 설정 및 상태 저장소
+ * 
+ * 주요 기능:
+ * - SharedPreferences를 사용한 앱 설정 저장/로드
+ * - 앱 최초 설치일 관리
+ * - 알림 설정 관리
+ * - 가이드 표시 여부 관리
+ * 
+ * 저장 데이터:
+ * - app_settings: 앱 설정 (알림, 리셋 시간 등)
+ * - install_date: 앱 설치일
+ * - welcome_guide_shown: 가이드 표시 여부
+ */
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import '../models/app_settings.dart';

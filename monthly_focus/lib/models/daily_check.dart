@@ -1,3 +1,21 @@
+/*
+ * DailyCheck: 목표별 일일 체크 데이터 모델
+ * 
+ * 주요 속성:
+ * - id: 고유 식별자
+ * - goal_id: 연관된 목표 ID
+ * - date: 체크한 날짜 (YYYY-MM-DD 형식)
+ * - is_completed: 완료 여부
+ * - checked_at: 체크한 시간
+ * 
+ * 기능:
+ * - JSON 직렬화/역직렬화
+ * - 데이터베이스 매핑
+ * - 체크 상태 토글
+ */
+
+import 'package:flutter/foundation.dart';
+
 class DailyCheck {
   final int? id;
   final int goalId;

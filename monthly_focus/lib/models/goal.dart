@@ -1,4 +1,22 @@
+/*
+ * Goal: 월간 목표 데이터 모델
+ * 
+ * 주요 속성:
+ * - id: 고유 식별자
+ * - month: 목표가 속한 월 (YYYY-MM 형식)
+ * - position: 목표 표시 순서
+ * - title: 목표 제목
+ * - emoji: 목표 대표 이모지
+ * - created_at: 생성일시
+ * 
+ * 기능:
+ * - JSON 직렬화/역직렬화
+ * - 데이터베이스 매핑
+ * - 목표 복사 및 비교
+ */
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class Goal {
   final int? id;

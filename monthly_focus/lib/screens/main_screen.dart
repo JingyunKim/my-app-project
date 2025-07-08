@@ -1,3 +1,19 @@
+/*
+ * MainScreen: 앱의 메인 네비게이션 화면
+ * 
+ * 주요 기능:
+ * - 하단 네비게이션 바 관리
+ * - 화면 전환 관리 (홈, 달력, 설정)
+ * - 앱 초기화 및 데이터 로딩
+ * - 앱 상태 관리
+ * 
+ * 화면 구성:
+ * - BottomNavigationBar: 화면 전환 네비게이션
+ * - HomeScreen: 메인 목표 관리 화면
+ * - CalendarScreen: 달력 보기 화면
+ * - SettingsScreen: 앱 설정 화면
+ */
+
 import 'package:flutter/material.dart';
 import 'home/home_screen.dart';
 import 'calendar/calendar_screen.dart';

@@ -1,3 +1,21 @@
+/*
+ * SettingsScreen: 앱 설정 화면
+ * 
+ * 주요 기능:
+ * - 알림 설정 관리
+ *   - 일일 체크 알림 시간
+ *   - 다음 달 목표 알림
+ * - 테마 설정 (라이트/다크 모드)
+ * - 앱 정보 표시
+ * - 데이터 백업/복원
+ * 
+ * 화면 구성:
+ * - NotificationSettings: 알림 관련 설정
+ * - ThemeSettings: 테마 모드 설정
+ * - AppInfo: 버전, 개발자 정보
+ * - DataManagement: 데이터 관리 옵션
+ */
+
 import 'package:flutter/material.dart';
 import '../../services/notification_service.dart';
 import '../../services/storage_service.dart';

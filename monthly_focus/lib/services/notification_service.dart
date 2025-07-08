@@ -1,3 +1,16 @@
+/*
+ * NotificationService: 로컬 알림 관리
+ * 
+ * 주요 기능:
+ * - 일일 체크 알림 예약/취소
+ * - 다음 달 목표 설정 알림 예약/취소
+ * - 알림 권한 요청 및 관리
+ * 
+ * 알림 종류:
+ * - daily_check: 매일 지정된 시간에 체크 알림
+ * - next_month_goals: 매월 마지막 주에 다음 달 목표 설정 알림
+ */
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;

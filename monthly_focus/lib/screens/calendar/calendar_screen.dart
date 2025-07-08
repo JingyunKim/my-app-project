@@ -1,3 +1,19 @@
+/*
+ * CalendarScreen: 월간 달력 화면
+ * 
+ * 주요 기능:
+ * - 월간 달력 표시
+ * - 일별 목표 체크 현황 표시
+ * - 날짜별 상세 체크 목록
+ * - 월 이동 네비게이션
+ * 
+ * 화면 구성:
+ * - MonthCalendar: 달력 위젯
+ * - DailyCheckList: 선택된 날짜의 체크 목록
+ * - MonthNavigator: 월 이동 버튼
+ * - CheckSummary: 월간 체크 통계
+ */
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';

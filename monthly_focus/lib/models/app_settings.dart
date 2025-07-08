@@ -1,3 +1,18 @@
+/*
+ * AppSettings: 앱 설정 데이터 모델
+ * 
+ * 주요 속성:
+ * - notification_enabled: 알림 활성화 여부
+ * - notification_time: 일일 알림 시간
+ * - next_month_notification: 다음 달 목표 알림 여부
+ * - theme_mode: 앱 테마 모드 (라이트/다크)
+ * 
+ * 기능:
+ * - JSON 직렬화/역직렬화
+ * - SharedPreferences 저장/로드
+ * - 설정 변경 이벤트 처리
+ */
+
 import 'package:flutter/material.dart';
 import 'dart:convert';
 

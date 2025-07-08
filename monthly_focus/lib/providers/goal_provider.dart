@@ -1,3 +1,18 @@
+/*
+ * GoalProvider: 단일 목표 상태 관리
+ * 
+ * 주요 기능:
+ * - 목표 데이터 상태 관리
+ * - 목표 수정 이벤트 처리
+ * - 목표 삭제 이벤트 처리
+ * - 목표 체크 상태 관리
+ * 
+ * 상태 구조:
+ * - goal: 현재 목표 데이터
+ * - isEditing: 수정 모드 여부
+ * - dailyChecks: 목표의 체크 데이터
+ */
+
 import 'package:flutter/material.dart';
 import '../models/goal.dart';
 import '../models/daily_check.dart';

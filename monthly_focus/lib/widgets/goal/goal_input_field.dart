@@ -1,3 +1,19 @@
+/*
+ * GoalInputField: 목표 입력 필드 위젯
+ * 
+ * 주요 기능:
+ * - 목표 제목 입력
+ * - 이모지 선택 버튼
+ * - 입력값 유효성 검사
+ * - 자동 포커스 및 키보드 제어
+ * 
+ * 구성 요소:
+ * - TextField: 목표 제목 입력 필드
+ * - EmojiButton: 이모지 선택 버튼
+ * - ValidationError: 오류 메시지 표시
+ * - InputDecoration: 입력 필드 스타일링
+ */
+
 import 'package:flutter/material.dart';
 import 'package:flutter_emoji/flutter_emoji.dart';
 import 'dart:math';

@@ -1,3 +1,20 @@
+/*
+ * GoalSettingScreen: 목표 설정/수정 화면
+ * 
+ * 주요 기능:
+ * - 새 목표 추가
+ * - 기존 목표 수정
+ * - 이모지 선택기
+ * - 목표 순서 변경
+ * - 목표 삭제
+ * 
+ * 화면 구성:
+ * - AppBar: 저장/취소 버튼
+ * - GoalForm: 목표 입력 폼
+ * - EmojiPicker: 이모지 선택 다이얼로그
+ * - DeleteConfirmDialog: 삭제 확인 다이얼로그
+ */
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/goal_provider.dart';
