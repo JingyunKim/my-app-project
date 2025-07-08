@@ -98,6 +98,26 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // [개발용 - 배포 전 삭제]
+        // 테스트를 위한 날짜 변경 기능
+        // 현재 날짜를 변경하여 다른 날짜의 목표와 체크 상태를 테스트할 수 있음
+        leading: IconButton(
+          icon: const Icon(Icons.calendar_today),
+          tooltip: '[개발용] 날짜 변경',
+          onPressed: () async {
+            final now = DateTime.now();
+            final selected = await showDatePicker(
+              context: context,
+              initialDate: context.read<GoalProvider>().testCurrentDate,
+              firstDate: DateTime(2024, 1, 1),
+              lastDate: DateTime(2025, 12, 31),
+            );
+
+            if (selected != null && mounted) {
+              await context.read<GoalProvider>().setTestCurrentDate(selected);
+            }
+          },
+        ),
         title: const Text('오늘의 목표'),
       ),
       body: Consumer<GoalProvider>(

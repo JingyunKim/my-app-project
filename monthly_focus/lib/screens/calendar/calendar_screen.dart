@@ -46,11 +46,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Future<void> _loadMonthData() async {
     final provider = context.read<GoalProvider>();
     
-    // 2025년 7월 샘플 데이터 체크
-    if (_focusedDay.year == 2025 && _focusedDay.month == 7) {
-      await provider.loadJuly2025Goals();
-    }
-    
     // 해당 월의 목표 로드
     final goals = await provider.getGoalsByMonth(_focusedDay);
     setState(() {

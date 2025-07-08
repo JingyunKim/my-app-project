@@ -29,6 +29,22 @@ class GoalProvider with ChangeNotifier {
   Map<DateTime, List<DailyCheck>> _dailyChecksCache = {};
   Set<DateTime> _loadingDates = {};
 
+  // [개발용 - 배포 전 삭제]
+  // 테스트를 위한 현재 날짜
+  DateTime _testCurrentDate = DateTime.now();
+  DateTime get testCurrentDate => _testCurrentDate;
+
+  // [개발용 - 배포 전 삭제]
+  // 테스트용 현재 날짜 설정
+  Future<void> setTestCurrentDate(DateTime date) async {
+    _testCurrentDate = date;
+    _currentMonth = DateTime(date.year, date.month);
+    await loadMonthlyGoals();
+    await loadNextMonthGoals();
+    await loadTodayChecks();
+    notifyListeners();
+  }
+
   List<Goal> get monthlyGoals => _monthlyGoals;
   List<Goal> get nextMonthGoals => _nextMonthGoals;  // 다음 달 목표 getter
   List<DailyCheck> get todayChecks => _todayChecks;
