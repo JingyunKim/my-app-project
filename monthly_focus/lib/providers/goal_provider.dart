@@ -29,26 +29,6 @@ class GoalProvider with ChangeNotifier {
   Map<DateTime, List<DailyCheck>> _dailyChecksCache = {};
   Set<DateTime> _loadingDates = {};
 
-  // [테스트용] 현재 날짜 설정
-  DateTime _testCurrentDate = DateTime.now();
-  DateTime get testCurrentDate => _testCurrentDate;
-  
-  // [테스트용] 현재 날짜 변경
-  Future<void> setTestCurrentDate(DateTime date) async {
-    _testCurrentDate = date;
-    _currentMonth = DateTime(date.year, date.month);
-    
-    // 2025년 7월인 경우 샘플 데이터 추가
-    if (date.year == 2025 && date.month == 7) {
-      await _db.insertJuly2025SampleGoals();
-    }
-    
-    await loadMonthlyGoals();
-    await loadNextMonthGoals();
-    await loadTodayChecks();
-    notifyListeners();
-  }
-
   List<Goal> get monthlyGoals => _monthlyGoals;
   List<Goal> get nextMonthGoals => _nextMonthGoals;  // 다음 달 목표 getter
   List<DailyCheck> get todayChecks => _todayChecks;
@@ -194,10 +174,5 @@ class GoalProvider with ChangeNotifier {
   // 특정 월의 목표 조회
   Future<List<Goal>> getGoalsByMonth(DateTime month) async {
     return await _db.getGoalsByMonth(month);
-  }
-
-  // [테스트용] 2025년 7월 목표 로드
-  Future<void> loadJuly2025Goals() async {
-    await _db.insertJuly2025SampleGoals();
   }
 } 
