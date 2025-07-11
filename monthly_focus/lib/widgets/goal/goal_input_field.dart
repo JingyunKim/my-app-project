@@ -18,7 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_emoji/flutter_emoji.dart';
 import 'dart:math';
 
-class GoalInputField extends StatelessWidget {
+class GoalInputField extends StatefulWidget {
   static const List<String> commonEmojis = [
     // 성취 & 동기부여
     '🎯', '⭐', '🏆', '✨', '💪', '🌟', '🚀', '✅', '📈',
@@ -51,6 +51,33 @@ class GoalInputField extends StatelessWidget {
     return commonEmojis[random.nextInt(commonEmojis.length)];
   }
 
+  @override
+  State<GoalInputField> createState() => _GoalInputFieldState();
+}
+
+class _GoalInputFieldState extends State<GoalInputField> {
+  int _currentLength = 0;
+  static const int maxLength = 20;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentLength = widget.controller.text.length;
+    widget.controller.addListener(_updateLength);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_updateLength);
+    super.dispose();
+  }
+
+  void _updateLength() {
+    setState(() {
+      _currentLength = widget.controller.text.length;
+    });
+  }
+
   void _showEmojiPicker(BuildContext context) async {
     final String? selected = await showDialog<String>(
       context: context,
@@ -59,7 +86,7 @@ class GoalInputField extends StatelessWidget {
         content: Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: commonEmojis.map((emoji) {
+          children: GoalInputField.commonEmojis.map((emoji) {
             return InkWell(
               onTap: () => Navigator.of(context).pop(emoji),
               child: Container(
@@ -82,7 +109,7 @@ class GoalInputField extends StatelessWidget {
     );
 
     if (selected != null) {
-      onEmojiSelected(selected);
+      widget.onEmojiSelected(selected);
     }
   }
 
@@ -93,21 +120,26 @@ class GoalInputField extends StatelessWidget {
         IconButton(
           onPressed: () => _showEmojiPicker(context),
           icon: Text(
-            emoji ?? getRandomEmoji(),
+            widget.emoji ?? GoalInputField.getRandomEmoji(),
             style: const TextStyle(fontSize: 24),
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: TextField(
-            controller: controller,
+            controller: widget.controller,
             decoration: InputDecoration(
-              labelText: '$position번째 목표',
+              labelText: '${widget.position}번째 목표',
               hintText: '목표를 입력해주세요',
               border: const OutlineInputBorder(),
-              counter: Text('${controller.text.length}/50'),
+              counterText: '$_currentLength/$maxLength',
             ),
-            maxLength: 50,
+            maxLength: maxLength,
+            onChanged: (value) {
+              setState(() {
+                _currentLength = value.length;
+              });
+            },
           ),
         ),
       ],

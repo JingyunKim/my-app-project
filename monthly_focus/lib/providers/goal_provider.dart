@@ -84,6 +84,16 @@ class GoalProvider with ChangeNotifier {
       ? _settings.testDate!
       : DateTime.now();
 
+  // 다음 달 목표를 데이터베이스에서 로드합니다.
+  Future<void> loadNextMonthGoals() async {
+    final nextMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
+    final goals = await _db.getGoalsByMonth(nextMonth);
+    if (!listEquals(_nextMonthGoals, goals)) {
+      _nextMonthGoals = goals;
+      notifyListeners();
+    }
+  }
+
   // 현재 월의 목표를 데이터베이스에서 로드합니다.
   Future<void> loadMonthlyGoals() async {
     final goals = await _db.getGoalsByMonth(_currentMonth);
@@ -103,16 +113,6 @@ class GoalProvider with ChangeNotifier {
     _calendarMonthGoals = goals;
     
     await refreshMonthlyChecks(month);
-  }
-
-  // 다음 달 목표를 데이터베이스에서 로드합니다.
-  Future<void> loadNextMonthGoals() async {
-    final nextMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
-    final goals = await _db.getGoalsByMonth(nextMonth);
-    if (!listEquals(_nextMonthGoals, goals)) {
-      _nextMonthGoals = goals;
-      notifyListeners();
-    }
   }
 
   // 오늘의 체크 데이터를 로드합니다.

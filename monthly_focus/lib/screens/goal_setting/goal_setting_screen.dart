@@ -20,13 +20,17 @@ import 'package:provider/provider.dart';
 import 'dart:math';
 import '../../providers/goal_provider.dart';
 import '../../widgets/goal/goal_input_field.dart';
+import '../../utils/app_date_utils.dart';
+import '../../models/goal.dart';
 
 class GoalSettingScreen extends StatefulWidget {
   final bool isForCurrentMonth;
+  final List<Goal> existingGoals;
 
   const GoalSettingScreen({
     super.key,
     this.isForCurrentMonth = false,
+    this.existingGoals = const [],
   });
 
   @override
@@ -60,7 +64,15 @@ class _GoalSettingScreenState extends State<GoalSettingScreen> {
     _randomEmojis = List.generate(4, (index) {
       return _allEmojis[random.nextInt(_allEmojis.length)];
     });
-    print('목표 설정 화면: 랜덤 이모지 4개 생성 완료');
+
+    // 기존 목표가 있으면 설정
+    for (int i = 0; i < widget.existingGoals.length && i < 4; i++) {
+      final goal = widget.existingGoals[i];
+      _controllers[i].text = goal.title;
+      _emojis[i] = goal.emoji;
+    }
+    
+    print('목표 설정 화면: 초기화 완료');
   }
 
   @override
@@ -84,6 +96,11 @@ class _GoalSettingScreenState extends State<GoalSettingScreen> {
       );
       return;
     }
+
+    final now = AppDateUtils.getCurrentDate(context);
+    final targetMonth = widget.isForCurrentMonth
+        ? now
+        : DateTime(now.year, now.month + 1);
 
     print('목표 설정 화면: ${widget.isForCurrentMonth ? "이번 달" : "다음 달"} 목표 저장 시작');
     // 목표 저장
@@ -116,9 +133,13 @@ class _GoalSettingScreenState extends State<GoalSettingScreen> {
   }
 
   String _getTitle() {
-    final title = widget.isForCurrentMonth ? '이번 달 목표 설정' : '다음 달 목표 설정';
-    print('목표 설정 화면: 제목 반환 - $title');
-    return title;
+    final now = AppDateUtils.getCurrentDate(context);
+    if (widget.isForCurrentMonth) {
+      return '${now.year}년 ${now.month}월의 목표';
+    } else {
+      final nextMonth = DateTime(now.year, now.month + 1);
+      return '${nextMonth.year}년 ${nextMonth.month}월의 목표';
+    }
   }
 
   String _getDescription() {

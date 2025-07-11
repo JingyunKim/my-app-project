@@ -127,6 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showGoalSetting({bool isForCurrentMonth = false}) {
     print('오늘 화면: 목표 설정 화면 표시 시도 - ${isForCurrentMonth ? "이번 달" : "다음 달"}');
     final goalProvider = context.read<GoalProvider>();
+    final existingGoals = isForCurrentMonth ? goalProvider.monthlyGoals : goalProvider.nextMonthGoals;
     final String errorMessage;
     
     if (isForCurrentMonth) {
@@ -155,7 +156,10 @@ class _HomeScreenState extends State<HomeScreen> {
     print('오늘 화면: 목표 설정 화면으로 이동');
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => GoalSettingScreen(isForCurrentMonth: isForCurrentMonth),
+        builder: (context) => GoalSettingScreen(
+          isForCurrentMonth: isForCurrentMonth,
+          existingGoals: existingGoals,
+        ),
       ),
     ).then((_) {
       print('오늘 화면: 목표 설정 화면에서 복귀 - 데이터 리로드');
@@ -245,50 +249,47 @@ class _HomeScreenState extends State<HomeScreen> {
       return const SizedBox.shrink();
     }
 
-    final now = AppDateUtils.getCurrentDate();
+    final now = AppDateUtils.getCurrentDate(context);
     final nextMonth = DateTime(now.year, now.month + 1);
     print('오늘 화면: 다음 달(${nextMonth.year}년 ${nextMonth.month}월) 목표 섹션 표시');
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Theme.of(context).colorScheme.surfaceTint.withOpacity(0.1),
-            Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surfaceTint.withOpacity(0.05),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Text(
+              '${nextMonth.month}월의 목표',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Spacer(),
+            if (provider.nextMonthGoals.isEmpty)
+              TextButton.icon(
+                onPressed: () => _showGoalSetting(isForCurrentMonth: false),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text(
+                  '설정하기',
+                  style: TextStyle(fontSize: 14),
+                ),
+              )
+            else
+              TextButton.icon(
+                onPressed: () => _showGoalSetting(isForCurrentMonth: false),
+                icon: const Icon(Icons.edit_note, size: 18),
+                label: const Text(
+                  '조회 및 수정하기',
+                  style: TextStyle(fontSize: 14),
+                ),
+              ),
           ],
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '${nextMonth.year}년 ${nextMonth.month}월의 목표',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (provider.nextMonthGoals.isEmpty) ...[
-            Row(
-              children: [
-                const Expanded(
-                  child: Text('다음 달 목표를 미리 설정해보세요'),
-                ),
-                TextButton.icon(
-                  onPressed: () => _showGoalSetting(isForCurrentMonth: false),
-                  icon: const Icon(Icons.add),
-                  label: const Text('설정하기'),
-                ),
-              ],
-            ),
-          ] else
-            const SizedBox.shrink(),
-        ],
       ),
     );
   }
