@@ -36,7 +36,7 @@ class DailyCheck {
     return {
       'id': id,
       'goal_id': goalId,
-      'date': date.toIso8601String(),
+      'date': DateTime(date.year, date.month, date.day).toIso8601String(),
       'is_completed': isCompleted ? 1 : 0,
       'checked_at': checkedAt.toIso8601String(),
     };
@@ -44,10 +44,11 @@ class DailyCheck {
 
   // DB에서 데이터를 가져올 때 사용할 팩토리 메서드
   factory DailyCheck.fromMap(Map<String, dynamic> map) {
+    final parsedDate = DateTime.parse(map['date']);
     return DailyCheck(
       id: map['id'] as int,
       goalId: map['goal_id'] as int,
-      date: DateTime.parse(map['date']),
+      date: DateTime(parsedDate.year, parsedDate.month, parsedDate.day),
       isCompleted: map['is_completed'] == 1,
       checkedAt: DateTime.parse(map['checked_at']),
     );

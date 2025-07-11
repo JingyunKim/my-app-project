@@ -30,20 +30,24 @@ class _HomeScreenState extends State<HomeScreen> {
     final currentDate = AppDateUtils.getCurrentDate(context);
     final provider = Provider.of<GoalProvider>(context);
     
-    // 날짜가 변경되었거나 데이터가 초기화된 경우
-    if (provider.monthlyGoals.isEmpty || !AppDateUtils.isSameDay(currentDate, provider.currentMonth)) {
+    // 날짜가 변경되었거나 데이터가 초기화된 경우에만 로드
+    if (provider.monthlyGoals.isEmpty || !AppDateUtils.isSameMonth(currentDate, provider.currentMonth)) {
       _loadInitialData();
     }
   }
 
   // 초기 데이터를 로드하고 웰컴 가이드를 표시합니다.
   Future<void> _loadInitialData() async {
+    if (_isLoading) return;  // 이미 로딩 중이면 중복 로드 방지
+    
     setState(() => _isLoading = true);
     try {
       await _loadGoals();
       await _showWelcomeGuideIfNeeded();
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

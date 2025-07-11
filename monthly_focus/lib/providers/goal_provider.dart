@@ -79,7 +79,9 @@ class GoalProvider with ChangeNotifier {
   List<DailyCheck> get todayChecks => _todayChecks;
   DateTime get currentMonth => _currentMonth;
   DateTime get selectedMonth => _selectedMonth;
-  DateTime get _now => AppDateUtils.getCurrentDate();
+  DateTime get _now => _settings.isTestMode && _settings.testDate != null
+      ? _settings.testDate!
+      : DateTime.now();
 
   // 현재 월의 목표를 데이터베이스에서 로드합니다.
   Future<void> loadMonthlyGoals() async {
@@ -128,43 +130,42 @@ class GoalProvider with ChangeNotifier {
     final key = _getCacheKey(date);
     final checks = _dailyChecksCache[key];
     
-    if (checks == null && !_loadingDates.contains(key)) {
-      _loadingDates.add(key);
-      loadDailyChecks(date).then((_) {
-        _loadingDates.remove(key);
+    if (checks == null) {
+      // 캐시에 없는 경우 데이터베이스에서 로드
+      loadDailyChecks(date).then((loadedChecks) {
+        _dailyChecksCache[key] = loadedChecks;
+        _cacheTimestamps[key] = DateTime.now();
         notifyListeners();
       });
       return [];
     }
     
-    return checks ?? [];
+    // 캐시가 만료된 경우 새로 로드
+    if (_cacheTimestamps[key] != null &&
+        DateTime.now().difference(_cacheTimestamps[key]!) > cacheDuration) {
+      loadDailyChecks(date).then((loadedChecks) {
+        _dailyChecksCache[key] = loadedChecks;
+        _cacheTimestamps[key] = DateTime.now();
+        notifyListeners();
+      });
+    }
+    
+    return checks;
   }
 
   // 특정 날짜의 체크 데이터를 데이터베이스에서 로드하고 캐시를 업데이트합니다.
   Future<List<DailyCheck>> loadDailyChecks(DateTime date) async {
     final key = _getCacheKey(date);
     
-    if (_dailyChecksCache.containsKey(key) && 
-        _cacheTimestamps.containsKey(key) &&
-        DateTime.now().difference(_cacheTimestamps[key]!) <= cacheDuration) {
-      return _dailyChecksCache[key]!;
-    }
-
-    if (_loadingDates.contains(key)) {
-      while (_loadingDates.contains(key)) {
-        await Future.delayed(const Duration(milliseconds: 100));
-      }
-      return _dailyChecksCache[key] ?? [];
-    }
-
     try {
       final checks = await _db.getDailyChecksByDate(date);
       _dailyChecksCache[key] = checks;
       _cacheTimestamps[key] = DateTime.now();
       notifyListeners();
       return checks;
-    } finally {
-      _loadingDates.remove(key);
+    } catch (e) {
+      print('Error loading daily checks: $e');
+      return [];
     }
   }
 
@@ -248,8 +249,10 @@ class GoalProvider with ChangeNotifier {
     _cacheTimestamps.clear();
     _loadingDates.clear();
     
-    // 현재 날짜 업데이트
-    _currentMonth = AppDateUtils.getCurrentDate();
+    // 현재 날짜 업데이트 (테스트 날짜 적용)
+    _currentMonth = settings.isTestMode && settings.testDate != null
+        ? settings.testDate!
+        : DateTime.now();
     _selectedMonth = _currentMonth;
     
     // 데이터 초기화

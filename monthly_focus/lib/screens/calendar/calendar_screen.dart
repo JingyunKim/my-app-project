@@ -48,14 +48,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final currentDate = AppDateUtils.getCurrentDate(context);
-    final provider = Provider.of<GoalProvider>(context);
     
-    // 날짜가 변경되었거나 데이터가 초기화된 경우
     if (!AppDateUtils.isSameDay(_selectedDay, currentDate)) {
       setState(() {
         _selectedDay = currentDate;
         _focusedDay = currentDate;
-        _selectedChecks.value = [];
       });
       _loadInitialData();
     }
@@ -89,37 +86,38 @@ class _CalendarScreenState extends State<CalendarScreen> {
     if (_selectedDay == null) return;
     
     final goalProvider = context.read<GoalProvider>();
+    final checks = goalProvider.getCachedDailyChecks(_selectedDay!);
     
-    // 오늘 날짜인 경우 todayChecks 사용
-    if (AppDateUtils.isSameDay(_selectedDay, AppDateUtils.getCurrentDate(context))) {
-      setState(() {
-        _selectedChecks.value = goalProvider.todayChecks;
-      });
-      return;
-    }
-    
-    goalProvider.loadDailyChecks(_selectedDay!).then((checks) {
-      if (mounted) {
-        setState(() {
-          _selectedChecks.value = checks;
-        });
-      }
+    setState(() {
+      _selectedChecks.value = checks;
     });
+    
+    // 캐시된 데이터가 없거나 오늘 날짜인 경우 새로 로드
+    if (checks.isEmpty || AppDateUtils.isSameDay(_selectedDay, AppDateUtils.getCurrentDate(context))) {
+      goalProvider.loadDailyChecks(_selectedDay!).then((updatedChecks) {
+        if (mounted) {
+          setState(() {
+            _selectedChecks.value = updatedChecks;
+          });
+        }
+      });
+    }
   }
 
   List<DailyCheck> _getChecksForDay(GoalProvider provider, DateTime day) {
     final normalizedDay = DateTime(day.year, day.month, day.day);
-    final normalizedToday = DateTime(
-      AppDateUtils.getCurrentDate(context).year,
-      AppDateUtils.getCurrentDate(context).month,
-      AppDateUtils.getCurrentDate(context).day,
-    );
+    final checks = provider.getCachedDailyChecks(normalizedDay);
     
-    if (normalizedDay.isAtSameMomentAs(normalizedToday)) {
-      return provider.todayChecks;
+    // 데이터가 없으면 로드 요청
+    if (checks.isEmpty) {
+      provider.loadDailyChecks(normalizedDay).then((_) {
+        if (mounted) {
+          setState(() {});  // 데이터가 로드되면 화면 갱신
+        }
+      });
     }
     
-    return provider.getCachedDailyChecks(day);
+    return checks;
   }
 
   @override
@@ -167,6 +165,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 currentDay: AppDateUtils.getCurrentDate(context),
                 selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                 calendarFormat: CalendarFormat.month,
+                startingDayOfWeek: StartingDayOfWeek.monday,
                 availableCalendarFormats: const {
                   CalendarFormat.month: '월간',
                 },
@@ -177,13 +176,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   if (!isSameDay(_selectedDay, selectedDay)) {
                     setState(() {
                       _selectedDay = selectedDay;
-                      _focusedDay = focusedDay;
+                      _focusedDay = selectedDay;
                     });
                     _loadSelectedDayChecks();
                   }
                 },
                 onPageChanged: (focusedDay) async {
-                  setState(() => _focusedDay = focusedDay);
+                  setState(() {
+                    _focusedDay = focusedDay;
+                  });
                   await _loadMonthData();
                 },
                 calendarStyle: const CalendarStyle(
@@ -193,11 +194,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     shape: BoxShape.circle,
                   ),
                   todayDecoration: BoxDecoration(
-                    color: Colors.blue,
+                    color: Color.fromARGB(255, 137, 188, 231),
                     shape: BoxShape.circle,
                   ),
                   selectedDecoration: BoxDecoration(
-                    color: Colors.deepPurple,
+                    color: Color.fromARGB(255, 100, 70, 152),
                     shape: BoxShape.circle,
                   ),
                   todayTextStyle: TextStyle(
@@ -208,6 +209,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
+                  outsideDaysVisible: false,  // 현재 월에 속하지 않는 날짜 숨김
+                ),
+                headerStyle: const HeaderStyle(
+                  formatButtonVisible: false,  // 포맷 변경 버튼 숨김
+                  titleCentered: true,  // 제목 중앙 정렬
                 ),
               ),
               const Divider(),

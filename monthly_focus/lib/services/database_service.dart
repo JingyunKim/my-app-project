@@ -108,11 +108,14 @@ class DatabaseService {
   // 특정 날짜의 체크 데이터를 조회합니다.
   Future<List<DailyCheck>> getDailyChecksByDate(DateTime date) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'daily_checks',
-      where: 'date = ?',
-      whereArgs: [date.toIso8601String()],
-    );
+    final dateStr = DateTime(date.year, date.month, date.day).toIso8601String();
+    
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT dc.* 
+      FROM daily_checks dc
+      WHERE date(dc.date) = date(?)
+    ''', [dateStr]);
+    
     return List.generate(maps.length, (i) => DailyCheck.fromMap(maps[i]));
   }
 
