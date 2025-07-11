@@ -200,6 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           body: ListView(
             children: [
+              // 알림 설정 섹션
               SwitchListTile(
                 title: const Text('알림 설정'),
                 subtitle: const Text('매일 밤 11시에 알림을 받습니다'),
@@ -213,27 +214,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }
                 },
               ),
-              if (settings.notificationEnabled) ...[
-                const Divider(height: 1),
-                ListTile(
-                  title: const Text('알림 테스트'),
-                  subtitle: const Text('알림이 정상적으로 작동하는지 테스트합니다'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextButton(
-                        onPressed: () => _notificationService.showTestNotification(),
-                        child: const Text('즉시 알림'),
-                      ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: () => _notificationService.showTestScheduledNotification(),
-                        child: const Text('10초 후 알림'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
               ListTile(
                 title: const Text('알림 시간'),
                 subtitle: Text(
@@ -244,7 +224,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 enabled: settings.notificationEnabled,
               ),
               const Divider(),
-              // 개발자 설정 섹션 추가
+              
+              // 개발자 설정 섹션
               const Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Text('개발자 설정', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -264,11 +245,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   trailing: const Icon(Icons.calendar_today),
                   onTap: () => _updateTestDate(settings),
                 ),
-              const Divider(),
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('데이터 관리', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
+              if (settings.notificationEnabled)
+                ListTile(
+                  title: const Text('알림 테스트'),
+                  subtitle: const Text('알림이 정상적으로 작동하는지 테스트합니다'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton(
+                        onPressed: () => _notificationService.showTestNotification(),
+                        child: const Text('즉시 알림'),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () => _notificationService.showTestScheduledNotification(),
+                        child: const Text('10초 후 알림'),
+                      ),
+                    ],
+                  ),
+                ),
               ListTile(
                 title: const Text('전체 데이터 초기화'),
                 subtitle: const Text('모든 데이터를 초기화합니다'),
@@ -278,11 +273,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: _resetAllData,
               ),
               const Divider(),
+              
+              // 앱 정보 섹션
               AboutListTile(
                 icon: const Icon(Icons.info),
                 applicationName: '한 달의 집중',
                 applicationVersion: '1.0.0',
-                applicationLegalese: '© 2024 Monthly Focus',
+                applicationLegalese: '© 2024 Monthly Focus\n\n만든이: 김진균\nEmail: wlsrbs321@naver.com',
                 child: const Text('앱 정보'),
               ),
             ],
