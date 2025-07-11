@@ -16,41 +16,33 @@
 import 'package:flutter/material.dart';
 import '../models/goal.dart';
 import '../models/daily_check.dart';
+import '../models/app_settings.dart';
 import '../services/database_service.dart';
 import '../services/storage_service.dart';
+import '../utils/date_utils.dart';
 
 class GoalProvider with ChangeNotifier {
   final DatabaseService _db = DatabaseService();
   final StorageService _storage = StorageService();
+  AppSettings _settings;
+  
   List<Goal> _monthlyGoals = [];
   List<Goal> _nextMonthGoals = [];  // 다음 달 목표 저장
   List<DailyCheck> _todayChecks = [];
-  DateTime _currentMonth = DateTime.now();
+  late DateTime _currentMonth;
   Map<DateTime, List<DailyCheck>> _dailyChecksCache = {};
   Set<DateTime> _loadingDates = {};
 
-  // TODO: [테스트 코드] 배포 전 아래 테스트용 코드 제거
-  // 1. testCurrentDate 변수
-  // 2. testCurrentDate getter
-  // 3. setTestCurrentDate 메서드
-  // 4. canSetNextMonthGoals 메서드에서 실제 DateTime.now() 사용하도록 변경
-  // 5. HomeScreen의 날짜 변경 버튼 제거
-  DateTime _testCurrentDate = DateTime.now();
-  DateTime get testCurrentDate => _testCurrentDate;
-
-  Future<void> setTestCurrentDate(DateTime date) async {
-    _testCurrentDate = date;
-    _currentMonth = DateTime(date.year, date.month);
-    await loadMonthlyGoals();
-    await loadNextMonthGoals();
-    await loadTodayChecks();
-    notifyListeners();
+  GoalProvider(this._settings) {
+    _currentMonth = AppDateUtils.getCurrentDate();
   }
 
   List<Goal> get monthlyGoals => _monthlyGoals;
   List<Goal> get nextMonthGoals => _nextMonthGoals;  // 다음 달 목표 getter
   List<DailyCheck> get todayChecks => _todayChecks;
   DateTime get currentMonth => _currentMonth;
+
+  DateTime get _now => AppDateUtils.getCurrentDate();
 
   // 현재 월의 목표 로드
   Future<void> loadMonthlyGoals() async {
@@ -67,7 +59,7 @@ class GoalProvider with ChangeNotifier {
 
   // 오늘의 체크 상태 로드
   Future<void> loadTodayChecks() async {
-    final now = DateTime.now();
+    final now = _now;
     _todayChecks = await _db.getDailyChecksByDate(
       DateTime(now.year, now.month, now.day),
     );
@@ -103,7 +95,7 @@ class GoalProvider with ChangeNotifier {
 
   // 캐시 정리
   void clearOldCache() {
-    final now = DateTime.now();
+    final now = _now;
     final oneMonthAgo = DateTime(now.year, now.month - 1, now.day);
     
     _dailyChecksCache.removeWhere((date, _) => date.isBefore(oneMonthAgo));
@@ -119,7 +111,7 @@ class GoalProvider with ChangeNotifier {
   // 새로운 목표 추가
   Future<void> addGoal(String title, String? emoji, int position) async {
     // 다음 달 1일 생성
-    final now = DateTime.now();
+    final now = _now;
     final nextMonth = DateTime(now.year, now.month + 1, 1);
 
     final goal = Goal(
@@ -135,7 +127,7 @@ class GoalProvider with ChangeNotifier {
 
   // 목표 체크 상태 업데이트
   Future<void> toggleGoalCheck(Goal goal) async {
-    final now = DateTime.now();
+    final now = _now;
     final today = DateTime(now.year, now.month, now.day);
     
     // 이미 체크된 항목이 있는지 확인
@@ -177,7 +169,7 @@ class GoalProvider with ChangeNotifier {
 
   // 다음 달 목표 설정 가능 여부 확인
   bool canSetNextMonthGoals() {
-    final now = testCurrentDate;  // DateTime.now() 대신 testCurrentDate 사용
+    final now = _now;
     final installDate = _storage.getInstallDate();
     
     // 설치 당월인 경우 항상 설정 가능
@@ -187,6 +179,12 @@ class GoalProvider with ChangeNotifier {
     
     // 25일 이후부터 설정 가능
     return now.day >= 25;
+  }
+
+  // 설정 업데이트
+  void updateSettings(AppSettings settings) {
+    _settings = settings;
+    loadTodayChecks(); // 테스트 모드 변경을 반영하기 위해 오늘의 체크 상태 다시 로드
   }
 
   // 특정 월의 목표 조회

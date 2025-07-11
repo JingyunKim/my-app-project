@@ -6,6 +6,8 @@
  * - notification_time: 일일 알림 시간
  * - next_month_notification: 다음 달 목표 알림 여부
  * - theme_mode: 앱 테마 모드 (라이트/다크)
+ * - is_test_mode: 테스트 모드 활성화 여부
+ * - test_date: 테스트 모드에서 사용할 날짜
  * 
  * 기능:
  * - JSON 직렬화/역직렬화
@@ -15,18 +17,57 @@
 
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:provider/provider.dart';
 
-class AppSettings {
-  final bool notificationEnabled;
-  final TimeOfDay notificationTime;
-  final TimeOfDay resetTime;
+class AppSettings extends ChangeNotifier {
+  bool _notificationEnabled;
+  TimeOfDay _notificationTime;
+  TimeOfDay _resetTime;
+  bool _isTestMode;
+  DateTime? _testDate;
+
+  bool get notificationEnabled => _notificationEnabled;
+  TimeOfDay get notificationTime => _notificationTime;
+  TimeOfDay get resetTime => _resetTime;
+  bool get isTestMode => _isTestMode;
+  DateTime? get testDate => _testDate;
+
+  set notificationEnabled(bool value) {
+    _notificationEnabled = value;
+    notifyListeners();
+  }
+
+  set notificationTime(TimeOfDay value) {
+    _notificationTime = value;
+    notifyListeners();
+  }
+
+  set resetTime(TimeOfDay value) {
+    _resetTime = value;
+    notifyListeners();
+  }
+
+  set isTestMode(bool value) {
+    _isTestMode = value;
+    notifyListeners();
+  }
+
+  set testDate(DateTime? value) {
+    _testDate = value;
+    notifyListeners();
+  }
 
   AppSettings({
-    this.notificationEnabled = true,
+    bool notificationEnabled = true,
     TimeOfDay? notificationTime,
     TimeOfDay? resetTime,
-  })  : notificationTime = notificationTime ?? const TimeOfDay(hour: 23, minute: 0),
-        resetTime = resetTime ?? const TimeOfDay(hour: 2, minute: 0);
+    bool isTestMode = false,
+    DateTime? testDate,
+  })  : _notificationEnabled = notificationEnabled,
+        _notificationTime = notificationTime ?? const TimeOfDay(hour: 23, minute: 0),
+        _resetTime = resetTime ?? const TimeOfDay(hour: 2, minute: 0),
+        _isTestMode = isTestMode,
+        _testDate = testDate;
 
   // SharedPreferences에서 사용할 Map 변환 메서드
   Map<String, dynamic> toMap() {
@@ -36,6 +77,8 @@ class AppSettings {
       'notification_minute': notificationTime.minute,
       'reset_hour': resetTime.hour,
       'reset_minute': resetTime.minute,
+      'is_test_mode': isTestMode,
+      'test_date': testDate?.toIso8601String(),
     };
   }
 
@@ -45,15 +88,19 @@ class AppSettings {
   // SharedPreferences에서 데이터를 가져올 때 사용할 팩토리 메서드
   factory AppSettings.fromMap(Map<String, dynamic> map) {
     return AppSettings(
-      notificationEnabled: map['notification_enabled'] as bool,
+      notificationEnabled: map['notification_enabled'] as bool? ?? true,
       notificationTime: TimeOfDay(
-        hour: map['notification_hour'] as int,
-        minute: map['notification_minute'] as int,
+        hour: (map['notification_hour'] as int?) ?? 23,
+        minute: (map['notification_minute'] as int?) ?? 0,
       ),
       resetTime: TimeOfDay(
-        hour: map['reset_hour'] as int,
-        minute: map['reset_minute'] as int,
+        hour: (map['reset_hour'] as int?) ?? 2,
+        minute: (map['reset_minute'] as int?) ?? 0,
       ),
+      isTestMode: map['is_test_mode'] as bool? ?? false,
+      testDate: map['test_date'] != null 
+          ? DateTime.parse(map['test_date'] as String)
+          : null,
     );
   }
 
@@ -66,11 +113,15 @@ class AppSettings {
     bool? notificationEnabled,
     TimeOfDay? notificationTime,
     TimeOfDay? resetTime,
+    bool? isTestMode,
+    DateTime? testDate,
   }) {
     return AppSettings(
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
       notificationTime: notificationTime ?? this.notificationTime,
       resetTime: resetTime ?? this.resetTime,
+      isTestMode: isTestMode ?? this.isTestMode,
+      testDate: testDate ?? this.testDate,
     );
   }
 } 

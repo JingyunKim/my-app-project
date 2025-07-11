@@ -22,6 +22,8 @@ import 'providers/goal_provider.dart';
 import 'screens/main_screen.dart';
 import 'services/storage_service.dart';
 import 'services/notification_service.dart';
+import 'models/app_settings.dart';
+import 'utils/date_utils.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,7 +35,25 @@ void main() async {
   final notificationService = NotificationService();
   await notificationService.init();
 
-  runApp(const MyApp());
+  // 앱 설정 로드 및 초기화
+  final settings = await storageService.loadSettings();
+  AppDateUtils.initialize(settings);
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AppSettings>.value(value: settings),
+        ChangeNotifierProxyProvider<AppSettings, GoalProvider>(
+          create: (_) => GoalProvider(settings),
+          update: (_, settings, previous) {
+            previous?.updateSettings(settings);
+            return previous ?? GoalProvider(settings);
+          },
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -41,25 +61,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => GoalProvider()),
-      ],
-      child: MaterialApp(
-        title: '한 달의 집중',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-          cardTheme: const CardThemeData(
-            elevation: 2,
-            margin: EdgeInsets.zero,
-          ),
+    return MaterialApp(
+      title: '한 달의 집중',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.light,
         ),
-        home: const MainScreen(),
+        useMaterial3: true,
+        cardTheme: const CardThemeData(
+          elevation: 2,
+          margin: EdgeInsets.zero,
+        ),
       ),
+      home: const MainScreen(),
     );
   }
 }

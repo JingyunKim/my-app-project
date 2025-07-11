@@ -5,6 +5,7 @@ import '../../models/daily_check.dart';
 import '../../services/storage_service.dart';
 import '../goal_setting/goal_setting_screen.dart';
 import '../../widgets/goal/goal_check_card.dart';
+import '../../utils/date_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -98,24 +99,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // TODO: [테스트 코드] 배포 전 제거 - 날짜 변경 기능
-        leading: IconButton(
-          icon: const Icon(Icons.calendar_today),
-          tooltip: '[개발용] 날짜 변경',
-          onPressed: () async {
-            final now = DateTime.now();
-            final selected = await showDatePicker(
-              context: context,
-              initialDate: context.read<GoalProvider>().testCurrentDate,
-              firstDate: DateTime(2024, 1, 1),
-              lastDate: DateTime(2025, 12, 31),
-            );
-
-            if (selected != null && mounted) {
-              await context.read<GoalProvider>().setTestCurrentDate(selected);
-            }
-          },
-        ),
         title: const Text('오늘의 목표'),
       ),
       body: Consumer<GoalProvider>(
@@ -150,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
           (check) => check.goalId == goal.id,
           orElse: () => DailyCheck(
             goalId: goal.id!,
-            date: DateTime.now(),
+            date: AppDateUtils.getCurrentDate(context),
             isCompleted: false,
           ),
         );
@@ -173,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return const SizedBox.shrink(); // 또는 Container()
     }
 
-    final now = DateTime.now();
+    final now = AppDateUtils.getCurrentDate(context);
     final nextMonth = DateTime(now.year, now.month + 1);
     
     return Container(
