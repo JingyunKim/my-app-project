@@ -37,7 +37,6 @@ void main() async {
 
   // 앱 설정 로드 및 초기화
   final settings = await storageService.loadSettings();
-  AppDateUtils.initialize(settings);
 
   runApp(
     MultiProvider(

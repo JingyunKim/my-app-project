@@ -66,15 +66,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  // 테스트 모드 설정을 업데이트하고 관련 데이터를 새로고침합니다.
   Future<void> _updateTestMode(AppSettings settings, bool value) async {
     settings.isTestMode = value;
-    if (value) {
-      settings.testDate = AppDateUtils.getCurrentDate();
-    } else {
+    if (!value) {
       settings.testDate = null;
+    } else if (settings.testDate == null) {
+      settings.testDate = AppDateUtils.getCurrentDate();
     }
     await _storageService.saveSettings(settings);
-    AppDateUtils.initialize(settings);
+    
+    // Provider 상태 업데이트
+    if (mounted) {
+      context.read<GoalProvider>().updateSettings(settings);
+    }
   }
 
   Future<void> _updateTestDate(AppSettings settings) async {
@@ -90,14 +95,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (picked != null) {
       settings.testDate = picked;
       await _storageService.saveSettings(settings);
-      AppDateUtils.initialize(settings);
 
-      // GoalProvider 데이터 다시 로드
+      // Provider 상태 업데이트
       if (mounted) {
-        final provider = Provider.of<GoalProvider>(context, listen: false);
-        await provider.loadMonthlyGoals(); // 현재 월 목표 다시 로드
-        await provider.loadNextMonthGoals(); // 다음 달 목표 다시 로드
-        await provider.loadTodayChecks(); // 오늘의 체크 상태 다시 로드
+        context.read<GoalProvider>().updateSettings(settings);
       }
     }
   }
@@ -133,22 +134,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
       '전체 데이터 초기화',
       '모든 목표와 체크 데이터, 앱 설정이 초기화되며\n앱 설치일이 현재 시점으로 변경됩니다.\n이 작업은 되돌릴 수 없습니다.',
       () async {
-        await _storageService.clearAllSettings();
+        // 데이터베이스 초기화
         await _databaseService.clearAllData();
         
-        // Provider 상태 초기화
+        // 설정 초기화
+        final defaultSettings = AppSettings();
+        await _storageService.saveSettings(defaultSettings);
+        
+        // Provider 상태 업데이트
         if (mounted) {
-          // 설정 초기화
-          final settings = _storageService.loadSettings();
-          Provider.of<AppSettings>(context, listen: false)
-            ..notificationEnabled = settings.notificationEnabled
-            ..notificationTime = settings.notificationTime
-            ..resetTime = settings.resetTime
-            ..isTestMode = settings.isTestMode
-            ..testDate = settings.testDate;
+          final settings = Provider.of<AppSettings>(context, listen: false);
+          settings
+            ..notificationEnabled = defaultSettings.notificationEnabled
+            ..notificationTime = defaultSettings.notificationTime
+            ..resetTime = defaultSettings.resetTime
+            ..isTestMode = defaultSettings.isTestMode
+            ..testDate = defaultSettings.testDate;
 
-          // 목표 데이터 캐시 초기화
-          Provider.of<GoalProvider>(context, listen: false).clearAllData();
+          // GoalProvider 상태 업데이트
+          context.read<GoalProvider>().updateSettings(settings);
           
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

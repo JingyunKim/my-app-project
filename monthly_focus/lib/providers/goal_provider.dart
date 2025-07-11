@@ -225,15 +225,13 @@ class GoalProvider with ChangeNotifier {
     return now.day >= 25;
   }
 
-  // 현재 월의 목표가 없고 24일 이전인 경우에만 목표 설정이 가능합니다.
+  // 현재 월의 목표가 없는 경우에만 목표 설정이 가능합니다.
   bool canSetCurrentMonthGoals() {
-    final now = _now;
-    
     if (_monthlyGoals.isNotEmpty) {
       return false;
     }
     
-    return now.day <= 24;
+    return true;
   }
 
   @override
@@ -245,6 +243,28 @@ class GoalProvider with ChangeNotifier {
 
   // 앱 설정이 변경될 때 관련 데이터를 새로고침합니다.
   void updateSettings(AppSettings settings) {
+    // 캐시 초기화
+    _dailyChecksCache.clear();
+    _cacheTimestamps.clear();
+    _loadingDates.clear();
+    
+    // 현재 날짜 업데이트
+    _currentMonth = AppDateUtils.getCurrentDate();
+    _selectedMonth = _currentMonth;
+    
+    // 데이터 초기화
+    _monthlyGoals = [];
+    _nextMonthGoals = [];
+    _calendarMonthGoals = [];
+    _todayChecks = [];
+    
+    // 상태 변경을 즉시 알림
+    notifyListeners();
+    
+    // 모든 데이터 새로고침
+    loadMonthlyGoals();
+    loadNextMonthGoals();
+    loadCalendarMonthGoals(_selectedMonth);
     loadTodayChecks();
   }
 

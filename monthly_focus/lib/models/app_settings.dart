@@ -50,9 +50,12 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 테스트 모드 활성화 상태를 설정합니다.
+  // 테스트 모드 활성화 상태를 설정하고, 비활성화 시 테스트 날짜를 초기화합니다.
   set isTestMode(bool value) {
     _isTestMode = value;
+    if (!value) {
+      _testDate = null;
+    }
     notifyListeners();
   }
 

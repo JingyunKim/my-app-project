@@ -3,18 +3,8 @@ import 'package:provider/provider.dart';
 import '../models/app_settings.dart';
 
 class AppDateUtils {
-  static AppSettings? _settings;
-
-  // AppSettings를 초기화합니다.
-  static void initialize(AppSettings settings) {
-    _settings = settings;
-  }
-
   // 현재 날짜를 반환합니다. (테스트 모드일 경우 테스트 날짜 반환)
   static DateTime getCurrentDate([BuildContext? context]) {
-    if (_settings != null && _settings!.isTestMode && _settings!.testDate != null) {
-      return _settings!.testDate!;
-    }
     if (context != null) {
       try {
         final settings = Provider.of<AppSettings>(context, listen: false);

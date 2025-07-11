@@ -44,6 +44,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _loadInitialData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final currentDate = AppDateUtils.getCurrentDate(context);
+    final provider = Provider.of<GoalProvider>(context);
+    
+    // 날짜가 변경되었거나 데이터가 초기화된 경우
+    if (!AppDateUtils.isSameDay(_focusedDay, currentDate) || 
+        (provider.calendarMonthGoals.isEmpty && _currentMonthGoals.isNotEmpty)) {
+      setState(() {
+        _focusedDay = currentDate;
+        _selectedDay = currentDate;
+        _currentMonthGoals = [];
+        _selectedChecks.value = [];
+      });
+      _loadInitialData();
+    }
+  }
+
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
     try {
@@ -98,6 +117,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   firstDay: DateTime.utc(2024, 1, 1),
                   lastDay: DateTime.utc(2025, 12, 31),
                   focusedDay: _focusedDay,
+                  currentDay: AppDateUtils.getCurrentDate(context),
                   selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                   calendarFormat: CalendarFormat.month,
                   availableCalendarFormats: const {
@@ -138,6 +158,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     markerDecoration: BoxDecoration(
                       color: Colors.blue,
                       shape: BoxShape.circle,
+                    ),
+                    todayDecoration: BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
+                    selectedDecoration: BoxDecoration(
+                      color: Colors.deepPurple,
+                      shape: BoxShape.circle,
+                    ),
+                    todayTextStyle: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    selectedTextStyle: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
