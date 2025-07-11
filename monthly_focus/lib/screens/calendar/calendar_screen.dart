@@ -185,11 +185,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     shape: BoxShape.circle,
                   ),
                   todayDecoration: BoxDecoration(
-                    color: Color.fromARGB(255, 137, 188, 231),
+                    color: Color.fromARGB(255, 42, 115, 174),
                     shape: BoxShape.circle,
                   ),
                   selectedDecoration: BoxDecoration(
-                    color: Color.fromARGB(255, 100, 70, 152),
+                    color: Color.fromARGB(255, 152, 165, 194),
                     shape: BoxShape.circle,
                   ),
                   todayTextStyle: TextStyle(

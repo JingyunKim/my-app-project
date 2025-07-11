@@ -6,6 +6,7 @@ import '../../services/storage_service.dart';
 import '../goal_setting/goal_setting_screen.dart';
 import '../../widgets/goal/goal_check_card.dart';
 import '../../utils/app_date_utils.dart';
+import '../../models/monthly_quote.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -183,6 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: _buildCurrentMonthGoals(provider),
                     ),
+                    _buildMonthlyQuote(),
                     const Divider(height: 1),
                     _buildNextMonthSection(provider),
                   ],
@@ -290,6 +292,50 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMonthlyQuote() {
+    final now = AppDateUtils.getCurrentDate(context);
+    final quote = MonthlyQuotes.getQuoteForMonth(now);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (quote.source != null) ...[
+            Text(
+              quote.quote,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '- ${quote.source}',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ] else
+            Text(
+              quote.quote,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+        ],
       ),
     );
   }
