@@ -20,6 +20,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../providers/goal_provider.dart';
 import '../../models/goal.dart';
 import '../../models/daily_check.dart';
+import '../../utils/date_utils.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -29,7 +30,7 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  DateTime _focusedDay = DateTime.now();
+  DateTime _focusedDay = AppDateUtils.getCurrentDate();
   DateTime? _selectedDay;
   late final ValueNotifier<List<DailyCheck>> _selectedChecks;
   List<Goal> _currentMonthGoals = [];  // 현재 보고 있는 달의 목표
@@ -37,7 +38,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedDay = _focusedDay;
+    _selectedDay = AppDateUtils.getCurrentDate();
     _selectedChecks = ValueNotifier([]);
     _loadMonthData();
   }
