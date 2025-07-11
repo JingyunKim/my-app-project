@@ -127,7 +127,19 @@ class GoalProvider with ChangeNotifier {
   // 캐시된 체크 데이터 가져오기
   List<DailyCheck> getCachedDailyChecks(DateTime date) {
     final key = _getCacheKey(date);
-    return _dailyChecksCache[key] ?? [];
+    final checks = _dailyChecksCache[key];
+    
+    // 캐시가 없으면 비동기로 로드 시작
+    if (checks == null && !_loadingDates.contains(key)) {
+      _loadingDates.add(key);
+      loadDailyChecks(date).then((_) {
+        _loadingDates.remove(key);
+        notifyListeners(); // 데이터 로드 후 UI 갱신
+      });
+      return [];
+    }
+    
+    return checks ?? [];
   }
 
   // 비동기로 데이터 로드 및 캐시 업데이트
@@ -149,8 +161,6 @@ class GoalProvider with ChangeNotifier {
       return _dailyChecksCache[key] ?? [];
     }
 
-    _loadingDates.add(key);
-    
     try {
       final checks = await _db.getDailyChecksByDate(date);
       _dailyChecksCache[key] = checks;
@@ -178,34 +188,39 @@ class GoalProvider with ChangeNotifier {
       ),
     );
 
+    DailyCheck updatedCheck;
     if (existingCheck.id == null) {
       // 새로운 체크 생성
-      await _db.insertDailyCheck(
-        DailyCheck(
-          goalId: goal.id!,
-          date: today,
-          isCompleted: true,
-        ),
+      final newCheck = DailyCheck(
+        goalId: goal.id!,
+        date: today,
+        isCompleted: true,
       );
+      final checkId = await _db.insertDailyCheck(newCheck);
+      updatedCheck = newCheck.copyWith(id: checkId);
     } else {
       // 기존 체크 업데이트
-      await _db.updateDailyCheck(
-        existingCheck.copyWith(
-          isCompleted: !existingCheck.isCompleted,
-        ),
+      updatedCheck = existingCheck.copyWith(
+        isCompleted: !existingCheck.isCompleted,
       );
+      await _db.updateDailyCheck(updatedCheck);
     }
 
-    // 캐시 무효화
-    _dailyChecksCache.remove(key);
-    _cacheTimestamps.remove(key);
+    // 캐시 업데이트
+    _dailyChecksCache[key] = _dailyChecksCache[key]?.map((check) {
+      return check.goalId == goal.id ? updatedCheck : check;
+    }).toList() ?? [updatedCheck];
+    _cacheTimestamps[key] = DateTime.now();
     
-    await loadTodayChecks();
-    
-    // 체크한 날짜가 달력에서 보고 있는 월에 속하면 캐시 업데이트
-    if (today.year == _selectedMonth.year && today.month == _selectedMonth.month) {
-      await loadDailyChecks(today);
+    // 오늘의 체크 목록 업데이트
+    final checkIndex = _todayChecks.indexWhere((check) => check.goalId == goal.id);
+    if (checkIndex >= 0) {
+      _todayChecks[checkIndex] = updatedCheck;
+    } else {
+      _todayChecks.add(updatedCheck);
     }
+
+    notifyListeners();
   }
 
   // 달력 화면의 월 변경

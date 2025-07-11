@@ -91,6 +91,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       settings.testDate = picked;
       await _storageService.saveSettings(settings);
       AppDateUtils.initialize(settings);
+
+      // GoalProvider 데이터 다시 로드
+      if (mounted) {
+        final provider = Provider.of<GoalProvider>(context, listen: false);
+        await provider.loadMonthlyGoals(); // 현재 월 목표 다시 로드
+        await provider.loadNextMonthGoals(); // 다음 달 목표 다시 로드
+        await provider.loadTodayChecks(); // 오늘의 체크 상태 다시 로드
+      }
     }
   }
 

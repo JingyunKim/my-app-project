@@ -93,35 +93,52 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
           return Column(
             children: [
-              _buildMonthlyGoals(),
-              TableCalendar<DailyCheck>(
-                firstDay: DateTime.utc(2024, 1, 1),
-                lastDay: DateTime.utc(2025, 12, 31),
-                focusedDay: _focusedDay,
-                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                calendarFormat: CalendarFormat.month,
-                availableCalendarFormats: const {
-                  CalendarFormat.month: '월간',
-                },
-                eventLoader: (day) => provider.getCachedDailyChecks(day),
-                onDaySelected: (selectedDay, focusedDay) {
-                  if (!isSameDay(_selectedDay, selectedDay)) {
-                    setState(() {
-                      _selectedDay = selectedDay;
-                      _focusedDay = focusedDay;
-                    });
-                    _loadSelectedDayChecks();
-                  }
-                },
-                onPageChanged: (focusedDay) {
-                  setState(() => _focusedDay = focusedDay);
-                  _loadMonthData();
-                },
-                calendarStyle: const CalendarStyle(
-                  markersMaxCount: 4,
-                  markerDecoration: BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
+              Consumer<GoalProvider>(
+                builder: (context, provider, _) => TableCalendar<DailyCheck>(
+                  firstDay: DateTime.utc(2024, 1, 1),
+                  lastDay: DateTime.utc(2025, 12, 31),
+                  focusedDay: _focusedDay,
+                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                  calendarFormat: CalendarFormat.month,
+                  availableCalendarFormats: const {
+                    CalendarFormat.month: '월간',
+                  },
+                  eventLoader: (day) {
+                    // 날짜를 정규화하여 비교
+                    final normalizedDay = DateTime(day.year, day.month, day.day);
+                    final normalizedToday = DateTime(
+                      _focusedDay.year,
+                      _focusedDay.month,
+                      _focusedDay.day,
+                    );
+                    
+                    // 오늘이면 todayChecks 사용 (실시간 업데이트를 위해)
+                    if (normalizedDay.isAtSameMomentAs(normalizedToday)) {
+                      return provider.todayChecks.where((check) => check.isCompleted).toList();
+                    }
+                    
+                    // 다른 날짜는 캐시된 데이터 사용
+                    return provider.getCachedDailyChecks(day).where((check) => check.isCompleted).toList();
+                  },
+                  onDaySelected: (selectedDay, focusedDay) {
+                    if (!isSameDay(_selectedDay, selectedDay)) {
+                      setState(() {
+                        _selectedDay = selectedDay;
+                        _focusedDay = focusedDay;
+                      });
+                      _loadSelectedDayChecks();
+                    }
+                  },
+                  onPageChanged: (focusedDay) {
+                    setState(() => _focusedDay = focusedDay);
+                    _loadMonthData();
+                  },
+                  calendarStyle: const CalendarStyle(
+                    markersMaxCount: 4,
+                    markerDecoration: BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
               ),
@@ -177,44 +194,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ],
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildMonthlyGoals() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Theme.of(context).colorScheme.primaryContainer,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${_focusedDay.year}년 ${_focusedDay.month}월의 목표',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (_currentMonthGoals.isEmpty)
-            const Text(
-              '설정된 목표가 없습니다',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-            )
-          else
-            Wrap(
-              spacing: 8,
-              children: _currentMonthGoals.map((goal) {
-                return Chip(
-                  avatar: Text(goal.emoji ?? '🎯'),
-                  label: Text(goal.title),
-                );
-              }).toList(),
-            ),
-        ],
       ),
     );
   }
