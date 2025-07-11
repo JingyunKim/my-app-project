@@ -96,18 +96,13 @@ class GoalProvider with ChangeNotifier {
 
   // 달력 화면의 선택된 월 목표와 체크 데이터를 로드합니다.
   Future<void> loadCalendarMonthGoals(DateTime month) async {
+    print('달력 데이터: ${month.year}년 ${month.month}월 데이터 로드');
     _selectedMonth = month;
-    final goals = await _db.getGoalsByMonth(month);
-    final checks = await _db.getDailyChecksByMonth(month);
     
+    final goals = await _db.getGoalsByMonth(month);
     _calendarMonthGoals = goals;
     
-    // 같은 월의 데이터인 경우에만 체크 데이터 업데이트
-    if (month.year == _currentMonth.year && month.month == _currentMonth.month) {
-      _monthlyChecks = checks;
-    }
-    
-    notifyListeners();
+    await refreshMonthlyChecks(month);
   }
 
   // 다음 달 목표를 데이터베이스에서 로드합니다.
@@ -214,7 +209,8 @@ class GoalProvider with ChangeNotifier {
       }
     }
 
-    notifyListeners();
+    // 체크 데이터 변경 후 현재 월의 데이터를 새로고침
+    await refreshMonthlyChecks(_currentMonth);
   }
 
   // 달력 화면의 월이 변경될 때 해당 월의 목표를 로드합니다.
@@ -244,6 +240,14 @@ class GoalProvider with ChangeNotifier {
       check.date.month == date.month && 
       check.date.day == date.day
     ).toList();
+  }
+
+  // 특정 월의 체크 데이터를 새로고침합니다.
+  Future<void> refreshMonthlyChecks(DateTime month) async {
+    print('체크 데이터: ${month.year}년 ${month.month}월 데이터 새로고침');
+    final checks = await _db.getDailyChecksByMonth(month);
+    _monthlyChecks = checks;
+    notifyListeners();
   }
 
   @override

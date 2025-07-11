@@ -92,8 +92,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   List<DailyCheck> _getChecksForDay(GoalProvider provider, DateTime day) {
-    final normalizedDay = DateTime(day.year, day.month, day.day);
-    return provider.getDailyChecksByDate(normalizedDay);
+    return provider.getDailyChecksByDate(day);
   }
 
   void _loadSelectedDayChecks() {
@@ -125,7 +124,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   _selectedDay = today;
                   _focusedDay = today;
                 });
-                _loadSelectedDayChecks();
+                _loadMonthData(); // 오늘 날짜로 이동할 때도 데이터 새로고침
               },
               child: const Text(
                 'Today',

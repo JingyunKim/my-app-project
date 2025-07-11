@@ -119,6 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final goalProvider = context.read<GoalProvider>();
     await goalProvider.loadMonthlyGoals();
     await goalProvider.loadNextMonthGoals();
+    await goalProvider.refreshMonthlyChecks(AppDateUtils.getCurrentDate(context));
     print('오늘 화면: 목표 데이터 로드 완료');
   }
 
