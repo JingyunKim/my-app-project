@@ -24,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadInitialData();
   }
 
+  // 초기 데이터를 로드하고 웰컴 가이드를 표시합니다.
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
     try {
@@ -34,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // 앱 최초 실행 시 웰컴 가이드를 표시합니다.
   Future<void> _showWelcomeGuideIfNeeded() async {
     if (!_storage.isWelcomeGuideShown()) {
       await showDialog(
@@ -44,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // 웰컴 가이드 다이얼로그를 생성합니다.
   Widget _buildWelcomeDialog() {
     return AlertDialog(
       title: const Text('한 달의 집중에 오신 것을 환영합니다! 🎉'),
@@ -81,12 +84,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // 현재 월과 다음 달 목표를 로드합니다.
   Future<void> _loadGoals() async {
     final goalProvider = context.read<GoalProvider>();
     await goalProvider.loadMonthlyGoals();
     await goalProvider.loadNextMonthGoals();
   }
 
+  // 목표 설정 화면을 표시합니다.
   void _showGoalSetting({bool isForCurrentMonth = false}) {
     final goalProvider = context.read<GoalProvider>();
     final String errorMessage;
@@ -143,6 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // 현재 월의 목표 목록을 표시합니다.
   Widget _buildCurrentMonthGoals(GoalProvider provider) {
     if (provider.monthlyGoals.isEmpty) {
       return Center(
@@ -188,6 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // 다음 달 목표 섹션을 표시합니다.
   Widget _buildNextMonthSection(GoalProvider provider) {
     if (!provider.canSetNextMonthGoals()) {
       return const SizedBox.shrink();

@@ -26,12 +26,14 @@ class DatabaseService {
 
   DatabaseService._internal();
 
+  // 데이터베이스 인스턴스를 초기화하고 반환합니다.
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
   }
 
+  // SQLite 데이터베이스를 생성하고 초기화합니다.
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'monthly_focus.db');
     return await openDatabase(
@@ -41,10 +43,9 @@ class DatabaseService {
     );
   }
 
+  // 데이터베이스 테이블과 인덱스를 생성합니다.
   Future<void> _createTables(Database db, int version) async {
-    // 트랜잭션 사용
     await db.transaction((txn) async {
-      // 목표 테이블 생성
       await txn.execute('''
         CREATE TABLE goals (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,7 +57,6 @@ class DatabaseService {
         )
       ''');
 
-      // 체크 테이블 생성
       await txn.execute('''
         CREATE TABLE daily_checks (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,14 +68,13 @@ class DatabaseService {
         )
       ''');
 
-      // 인덱스 생성
       await txn.execute('CREATE INDEX idx_goals_month ON goals(month, position)');
       await txn.execute('CREATE INDEX idx_daily_checks_date_goal ON daily_checks(date, goal_id)');
       await txn.execute('CREATE INDEX idx_daily_checks_goal_date ON daily_checks(goal_id, date)');
     });
   }
 
-  // 목표 관련 메서드
+  // 새로운 목표를 데이터베이스에 추가합니다.
   Future<int> insertGoal(Goal goal) async {
     final db = await database;
     return await db.transaction((txn) async {
@@ -83,6 +82,7 @@ class DatabaseService {
     });
   }
 
+  // 특정 월의 목표 목록을 조회합니다.
   Future<List<Goal>> getGoalsByMonth(DateTime month) async {
     final db = await database;
     final monthStr = '${month.year}-${month.month.toString().padLeft(2, '0')}';
@@ -97,7 +97,7 @@ class DatabaseService {
     return List.generate(maps.length, (i) => Goal.fromMap(maps[i]));
   }
 
-  // 체크 관련 메서드
+  // 새로운 체크 데이터를 데이터베이스에 추가합니다.
   Future<int> insertDailyCheck(DailyCheck check) async {
     final db = await database;
     return await db.transaction((txn) async {
@@ -105,6 +105,7 @@ class DatabaseService {
     });
   }
 
+  // 특정 날짜의 체크 데이터를 조회합니다.
   Future<List<DailyCheck>> getDailyChecksByDate(DateTime date) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
@@ -115,6 +116,7 @@ class DatabaseService {
     return List.generate(maps.length, (i) => DailyCheck.fromMap(maps[i]));
   }
 
+  // 체크 데이터를 업데이트합니다.
   Future<void> updateDailyCheck(DailyCheck check) async {
     final db = await database;
     await db.transaction((txn) async {
@@ -127,7 +129,7 @@ class DatabaseService {
     });
   }
 
-  // 데이터베이스 초기화
+  // 모든 데이터를 초기화합니다.
   Future<void> clearAllData() async {
     final db = await database;
     await db.transaction((txn) async {
@@ -136,11 +138,10 @@ class DatabaseService {
     });
   }
 
-  // 오래된 데이터 정리
+  // 지정된 날짜 이전의 오래된 데이터를 삭제합니다.
   Future<void> cleanupOldData(DateTime before) async {
     final db = await database;
     await db.transaction((txn) async {
-      // 오래된 목표 삭제 (CASCADE로 연결된 체크도 자동 삭제)
       await txn.delete(
         'goals',
         where: 'month < ?',

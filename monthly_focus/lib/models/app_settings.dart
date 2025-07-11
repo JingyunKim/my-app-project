@@ -32,31 +32,37 @@ class AppSettings extends ChangeNotifier {
   bool get isTestMode => _isTestMode;
   DateTime? get testDate => _testDate;
 
+  // 알림 활성화 상태를 설정합니다.
   set notificationEnabled(bool value) {
     _notificationEnabled = value;
     notifyListeners();
   }
 
+  // 알림 시간을 설정합니다.
   set notificationTime(TimeOfDay value) {
     _notificationTime = value;
     notifyListeners();
   }
 
+  // 일일 리셋 시간을 설정합니다.
   set resetTime(TimeOfDay value) {
     _resetTime = value;
     notifyListeners();
   }
 
+  // 테스트 모드 활성화 상태를 설정합니다.
   set isTestMode(bool value) {
     _isTestMode = value;
     notifyListeners();
   }
 
+  // 테스트 날짜를 설정합니다.
   set testDate(DateTime? value) {
     _testDate = value;
     notifyListeners();
   }
 
+  // 앱 설정을 초기화합니다.
   AppSettings({
     bool notificationEnabled = true,
     TimeOfDay? notificationTime,

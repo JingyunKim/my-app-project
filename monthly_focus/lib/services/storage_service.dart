@@ -30,46 +30,45 @@ class StorageService {
 
   StorageService._internal();
 
+  // SharedPreferences를 초기화하고 앱 설치일을 저장합니다.
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     
-    // 앱 최초 설치 시 현재 날짜 저장
     if (!_prefs.containsKey(_installDateKey)) {
       await _prefs.setString(_installDateKey, DateTime.now().toIso8601String());
     }
   }
 
-  // 앱 최초 설치일 조회
+  // 앱 최초 설치일을 반환합니다.
   DateTime getInstallDate() {
     final dateStr = _prefs.getString(_installDateKey);
     return dateStr != null ? DateTime.parse(dateStr) : DateTime.now();
   }
 
-  // 앱 설정 저장
+  // 앱 설정을 저장소에 저장합니다.
   Future<void> saveSettings(AppSettings settings) async {
     await _prefs.setString(_settingsKey, settings.toJson());
   }
 
-  // 앱 설정 로드
+  // 저장된 앱 설정을 로드합니다.
   AppSettings loadSettings() {
     final json = _prefs.getString(_settingsKey);
     return json != null ? AppSettings.fromJson(json) : AppSettings();
   }
 
-  // 가이드 표시 여부 확인
+  // 웰컴 가이드 표시 여부를 확인합니다.
   bool isWelcomeGuideShown() {
     return _prefs.getBool(_welcomeShownKey) ?? false;
   }
 
-  // 가이드 표시 완료 저장
+  // 웰컴 가이드를 표시했음을 저장합니다.
   Future<void> markWelcomeGuideAsShown() async {
     await _prefs.setBool(_welcomeShownKey, true);
   }
 
-  // 모든 설정 초기화
+  // 모든 설정을 초기화하고 설치일을 현재 시점으로 업데이트합니다.
   Future<void> clearAllSettings() async {
     await _prefs.clear();
-    // 설치일을 현재 시점으로 업데이트
     await _prefs.setString(_installDateKey, DateTime.now().toIso8601String());
   }
 } 

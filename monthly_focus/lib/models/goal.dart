@@ -26,6 +26,7 @@ class Goal {
   final String? emoji;
   final DateTime createdAt;
 
+  // 목표 객체를 생성합니다.
   Goal({
     this.id,
     required this.month,
@@ -35,7 +36,7 @@ class Goal {
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  // DB에서 사용할 Map 변환 메서드
+  // 목표 데이터를 Map 형태로 변환합니다.
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -47,7 +48,7 @@ class Goal {
     };
   }
 
-  // DB에서 데이터를 가져올 때 사용할 팩토리 메서드
+  // Map 데이터로부터 목표 객체를 생성합니다.
   factory Goal.fromMap(Map<String, dynamic> map) {
     return Goal(
       id: map['id'] as int,
@@ -59,7 +60,7 @@ class Goal {
     );
   }
 
-  // 목표 복사본 생성 (상태 업데이트 시 사용)
+  // 목표의 일부 속성을 변경한 새로운 객체를 생성합니다.
   Goal copyWith({
     int? id,
     DateTime? month,
