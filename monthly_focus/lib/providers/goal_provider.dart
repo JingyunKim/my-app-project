@@ -29,13 +29,15 @@ class GoalProvider with ChangeNotifier {
   Map<DateTime, List<DailyCheck>> _dailyChecksCache = {};
   Set<DateTime> _loadingDates = {};
 
-  // [개발용 - 배포 전 삭제]
-  // 테스트를 위한 현재 날짜
+  // TODO: [테스트 코드] 배포 전 아래 테스트용 코드 제거
+  // 1. testCurrentDate 변수
+  // 2. testCurrentDate getter
+  // 3. setTestCurrentDate 메서드
+  // 4. canSetNextMonthGoals 메서드에서 실제 DateTime.now() 사용하도록 변경
+  // 5. HomeScreen의 날짜 변경 버튼 제거
   DateTime _testCurrentDate = DateTime.now();
   DateTime get testCurrentDate => _testCurrentDate;
 
-  // [개발용 - 배포 전 삭제]
-  // 테스트용 현재 날짜 설정
   Future<void> setTestCurrentDate(DateTime date) async {
     _testCurrentDate = date;
     _currentMonth = DateTime(date.year, date.month);
@@ -175,7 +177,7 @@ class GoalProvider with ChangeNotifier {
 
   // 다음 달 목표 설정 가능 여부 확인
   bool canSetNextMonthGoals() {
-    final now = DateTime.now();
+    final now = testCurrentDate;  // DateTime.now() 대신 testCurrentDate 사용
     final installDate = _storage.getInstallDate();
     
     // 설치 당월인 경우 항상 설정 가능

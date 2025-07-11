@@ -98,9 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // [개발용 - 배포 전 삭제]
-        // 테스트를 위한 날짜 변경 기능
-        // 현재 날짜를 변경하여 다른 날짜의 목표와 체크 상태를 테스트할 수 있음
+        // TODO: [테스트 코드] 배포 전 제거 - 날짜 변경 기능
         leading: IconButton(
           icon: const Icon(Icons.calendar_today),
           tooltip: '[개발용] 날짜 변경',
@@ -170,12 +168,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNextMonthSection(GoalProvider provider) {
+    // 목표 설정 가능 여부 체크
+    if (!provider.canSetNextMonthGoals()) {
+      return const SizedBox.shrink(); // 또는 Container()
+    }
+
     final now = DateTime.now();
     final nextMonth = DateTime(now.year, now.month + 1);
     
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+      decoration: BoxDecoration(
+  gradient: LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Theme.of(context).colorScheme.surfaceTint.withOpacity(0.1),
+      Theme.of(context).colorScheme.surface,
+    ],
+  ),
+),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
