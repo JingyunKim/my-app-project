@@ -51,12 +51,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final provider = Provider.of<GoalProvider>(context);
     
     // 날짜가 변경되었거나 데이터가 초기화된 경우
-    if (!AppDateUtils.isSameDay(_focusedDay, currentDate) || 
-        (provider.calendarMonthGoals.isEmpty && _currentMonthGoals.isNotEmpty)) {
+    if (!AppDateUtils.isSameDay(_selectedDay, currentDate)) {
       setState(() {
-        _focusedDay = currentDate;
         _selectedDay = currentDate;
-        _currentMonthGoals = [];
+        _focusedDay = currentDate;
         _selectedChecks.value = [];
       });
       _loadInitialData();
@@ -73,10 +71,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  // 선택된 월의 데이터 로드
   Future<void> _loadMonthData() async {
     final provider = context.read<GoalProvider>();
     await provider.loadCalendarMonthGoals(_focusedDay);
+    setState(() {
+      _currentMonthGoals = provider.calendarMonthGoals;
+    });
   }
 
   @override
@@ -89,6 +89,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
     if (_selectedDay == null) return;
     
     final goalProvider = context.read<GoalProvider>();
+    
+    // 오늘 날짜인 경우 todayChecks 사용
+    if (AppDateUtils.isSameDay(_selectedDay, AppDateUtils.getCurrentDate(context))) {
+      setState(() {
+        _selectedChecks.value = goalProvider.todayChecks;
+      });
+      return;
+    }
+    
     goalProvider.loadDailyChecks(_selectedDay!).then((checks) {
       if (mounted) {
         setState(() {
@@ -118,17 +127,31 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('월간 달성 현황'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: TextButton(
+              onPressed: () {
+                final today = AppDateUtils.getCurrentDate(context);
+                setState(() {
+                  _selectedDay = today;
+                  _focusedDay = today;
+                });
+                _loadSelectedDayChecks();
+              },
+              child: const Text(
+                'Today',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Consumer<GoalProvider>(
         builder: (context, provider, child) {
-          _currentMonthGoals = provider.calendarMonthGoals;
-          
-          // 선택된 날짜가 오늘이면 todayChecks를 사용
-          if (_selectedDay != null && 
-              AppDateUtils.isSameDay(_selectedDay, AppDateUtils.getCurrentDate(context))) {
-            _selectedChecks.value = provider.todayChecks;
-          }
-          
           if (_isLoading) {
             return const Center(
               child: CircularProgressIndicator(),
@@ -137,55 +160,53 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
           return Column(
             children: [
-              Consumer<GoalProvider>(
-                builder: (context, provider, _) => TableCalendar<DailyCheck>(
-                  firstDay: DateTime.utc(2024, 1, 1),
-                  lastDay: DateTime.utc(2025, 12, 31),
-                  focusedDay: _focusedDay,
-                  currentDay: AppDateUtils.getCurrentDate(context),
-                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                  calendarFormat: CalendarFormat.month,
-                  availableCalendarFormats: const {
-                    CalendarFormat.month: '월간',
-                  },
-                  eventLoader: (day) => _getChecksForDay(provider, day)
-                      .where((check) => check.isCompleted)
-                      .toList(),
-                  onDaySelected: (selectedDay, focusedDay) {
-                    if (!isSameDay(_selectedDay, selectedDay)) {
-                      setState(() {
-                        _selectedDay = selectedDay;
-                        _focusedDay = focusedDay;
-                      });
-                      _loadSelectedDayChecks();
-                    }
-                  },
-                  onPageChanged: (focusedDay) {
-                    setState(() => _focusedDay = focusedDay);
-                    _loadMonthData();
-                  },
-                  calendarStyle: const CalendarStyle(
-                    markersMaxCount: 4,
-                    markerDecoration: BoxDecoration(
-                      color: Colors.blue,
-                      shape: BoxShape.circle,
-                    ),
-                    todayDecoration: BoxDecoration(
-                      color: Colors.blue,
-                      shape: BoxShape.circle,
-                    ),
-                    selectedDecoration: BoxDecoration(
-                      color: Colors.deepPurple,
-                      shape: BoxShape.circle,
-                    ),
-                    todayTextStyle: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    selectedTextStyle: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+              TableCalendar<DailyCheck>(
+                firstDay: DateTime.utc(2024, 1, 1),
+                lastDay: DateTime.utc(2025, 12, 31),
+                focusedDay: _focusedDay,
+                currentDay: AppDateUtils.getCurrentDate(context),
+                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                calendarFormat: CalendarFormat.month,
+                availableCalendarFormats: const {
+                  CalendarFormat.month: '월간',
+                },
+                eventLoader: (day) => _getChecksForDay(provider, day)
+                    .where((check) => check.isCompleted)
+                    .toList(),
+                onDaySelected: (selectedDay, focusedDay) {
+                  if (!isSameDay(_selectedDay, selectedDay)) {
+                    setState(() {
+                      _selectedDay = selectedDay;
+                      _focusedDay = focusedDay;
+                    });
+                    _loadSelectedDayChecks();
+                  }
+                },
+                onPageChanged: (focusedDay) async {
+                  setState(() => _focusedDay = focusedDay);
+                  await _loadMonthData();
+                },
+                calendarStyle: const CalendarStyle(
+                  markersMaxCount: 4,
+                  markerDecoration: BoxDecoration(
+                    color: Colors.blue,
+                    shape: BoxShape.circle,
+                  ),
+                  todayDecoration: BoxDecoration(
+                    color: Colors.blue,
+                    shape: BoxShape.circle,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: Colors.deepPurple,
+                    shape: BoxShape.circle,
+                  ),
+                  todayTextStyle: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  selectedTextStyle: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -233,10 +254,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 : Icons.check_circle_outline,
                             color: check.isCompleted ? Colors.green : Colors.grey,
                           ),
-                          onTap: () {
-                            provider.toggleGoalCheck(goal);
-                            _loadSelectedDayChecks();
-                          },
+                          enabled: false,  // 클릭 비활성화
                         );
                       },
                     );

@@ -24,6 +24,18 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadInitialData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final currentDate = AppDateUtils.getCurrentDate(context);
+    final provider = Provider.of<GoalProvider>(context);
+    
+    // 날짜가 변경되었거나 데이터가 초기화된 경우
+    if (provider.monthlyGoals.isEmpty || !AppDateUtils.isSameDay(currentDate, provider.currentMonth)) {
+      _loadInitialData();
+    }
+  }
+
   // 초기 데이터를 로드하고 웰컴 가이드를 표시합니다.
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);

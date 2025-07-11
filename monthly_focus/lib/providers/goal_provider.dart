@@ -242,7 +242,7 @@ class GoalProvider with ChangeNotifier {
   }
 
   // 앱 설정이 변경될 때 관련 데이터를 새로고침합니다.
-  void updateSettings(AppSettings settings) {
+  Future<void> updateSettings(AppSettings settings) async {
     // 캐시 초기화
     _dailyChecksCache.clear();
     _cacheTimestamps.clear();
@@ -262,10 +262,9 @@ class GoalProvider with ChangeNotifier {
     notifyListeners();
     
     // 모든 데이터 새로고침
-    loadMonthlyGoals();
-    loadNextMonthGoals();
-    loadCalendarMonthGoals(_selectedMonth);
-    loadTodayChecks();
+    await loadMonthlyGoals();  // 현재 월 목표와 오늘의 체크 데이터 로드
+    await loadNextMonthGoals();
+    await loadCalendarMonthGoals(_selectedMonth);
   }
 
   // 모든 데이터 초기화
