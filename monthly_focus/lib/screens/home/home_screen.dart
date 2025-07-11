@@ -21,24 +21,32 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    print('오늘 화면: 초기화 시작');
     _loadInitialData();
+    print('오늘 화면: 초기화 완료');
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    print('오늘 화면: 의존성 변경 감지');
     final currentDate = AppDateUtils.getCurrentDate(context);
     final provider = Provider.of<GoalProvider>(context);
     
     // 날짜가 변경되었거나 데이터가 초기화된 경우에만 로드
     if (provider.monthlyGoals.isEmpty || !AppDateUtils.isSameMonth(currentDate, provider.currentMonth)) {
+      print('오늘 화면: 날짜 변경 또는 데이터 초기화로 인한 데이터 리로드');
       _loadInitialData();
     }
   }
 
   // 초기 데이터를 로드하고 웰컴 가이드를 표시합니다.
   Future<void> _loadInitialData() async {
-    if (_isLoading) return;  // 이미 로딩 중이면 중복 로드 방지
+    print('오늘 화면: 초기 데이터 로드 시작');
+    if (_isLoading) {
+      print('오늘 화면: 이미 로딩 중이므로 중복 로드 방지');
+      return;
+    }
     
     setState(() => _isLoading = true);
     try {
@@ -48,12 +56,15 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+      print('오늘 화면: 초기 데이터 로드 완료');
     }
   }
 
   // 앱 최초 실행 시 웰컴 가이드를 표시합니다.
   Future<void> _showWelcomeGuideIfNeeded() async {
+    print('오늘 화면: 웰컴 가이드 표시 여부 확인');
     if (!_storage.isWelcomeGuideShown()) {
+      print('오늘 화면: 웰컴 가이드 다이얼로그 표시');
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -64,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 웰컴 가이드 다이얼로그를 생성합니다.
   Widget _buildWelcomeDialog() {
+    print('오늘 화면: 웰컴 가이드 다이얼로그 생성');
     return AlertDialog(
       title: const Text('한 달의 집중에 오신 것을 환영합니다! 🎉'),
       content: Column(
@@ -90,6 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
       actions: [
         TextButton(
           onPressed: () {
+            print('오늘 화면: 웰컴 가이드 확인 및 목표 설정 화면으로 이동');
             _storage.markWelcomeGuideAsShown();
             Navigator.of(context).pop();
             _showGoalSetting(isForCurrentMonth: true);
@@ -102,25 +115,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 현재 월과 다음 달 목표를 로드합니다.
   Future<void> _loadGoals() async {
+    print('오늘 화면: 목표 데이터 로드 시작');
     final goalProvider = context.read<GoalProvider>();
     await goalProvider.loadMonthlyGoals();
     await goalProvider.loadNextMonthGoals();
+    print('오늘 화면: 목표 데이터 로드 완료');
   }
 
   // 목표 설정 화면을 표시합니다.
   void _showGoalSetting({bool isForCurrentMonth = false}) {
+    print('오늘 화면: 목표 설정 화면 표시 시도 - ${isForCurrentMonth ? "이번 달" : "다음 달"}');
     final goalProvider = context.read<GoalProvider>();
     final String errorMessage;
     
     if (isForCurrentMonth) {
       if (!goalProvider.canSetCurrentMonthGoals()) {
         errorMessage = '이번 달 목표는 1일부터 24일까지만 설정할 수 있습니다';
+        print('오늘 화면: 이번 달 목표 설정 불가 - $errorMessage');
       } else {
         errorMessage = '';
       }
     } else {
       if (!goalProvider.canSetNextMonthGoals()) {
         errorMessage = '다음 달 목표는 이번 달 25일부터 설정할 수 있습니다';
+        print('오늘 화면: 다음 달 목표 설정 불가 - $errorMessage');
       } else {
         errorMessage = '';
       }
@@ -133,15 +151,20 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    print('오늘 화면: 목표 설정 화면으로 이동');
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => GoalSettingScreen(isForCurrentMonth: isForCurrentMonth),
       ),
-    ).then((_) => _loadGoals());
+    ).then((_) {
+      print('오늘 화면: 목표 설정 화면에서 복귀 - 데이터 리로드');
+      _loadGoals();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    print('오늘 화면: 화면 빌드 시작');
     return Scaffold(
       appBar: AppBar(
         title: const Text('오늘의 목표'),
@@ -166,7 +189,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 현재 월의 목표 목록을 표시합니다.
   Widget _buildCurrentMonthGoals(GoalProvider provider) {
+    print('오늘 화면: 이번 달 목표 목록 빌드');
     if (provider.monthlyGoals.isEmpty) {
+      print('오늘 화면: 이번 달 목표 없음');
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -184,6 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    print('오늘 화면: 이번 달 목표 ${provider.monthlyGoals.length}개 표시');
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: provider.monthlyGoals.length,
@@ -212,12 +238,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 다음 달 목표 섹션을 표시합니다.
   Widget _buildNextMonthSection(GoalProvider provider) {
+    print('오늘 화면: 다음 달 목표 섹션 빌드');
     if (!provider.canSetNextMonthGoals()) {
+      print('오늘 화면: 다음 달 목표 설정 기간이 아님');
       return const SizedBox.shrink();
     }
 
     final now = AppDateUtils.getCurrentDate();
     final nextMonth = DateTime(now.year, now.month + 1);
+    print('오늘 화면: 다음 달(${nextMonth.year}년 ${nextMonth.month}월) 목표 섹션 표시');
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -243,37 +272,21 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          if (provider.nextMonthGoals.isEmpty)
+          if (provider.nextMonthGoals.isEmpty) ...[
             Row(
               children: [
                 const Expanded(
-                  child: Text(
-                    '다음 달 목표를 설정해주세요',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 14,
-                    ),
-                  ),
+                  child: Text('다음 달 목표를 미리 설정해보세요'),
                 ),
                 TextButton.icon(
                   onPressed: () => _showGoalSetting(isForCurrentMonth: false),
                   icon: const Icon(Icons.add),
-                  label: const Text('목표 설정'),
+                  label: const Text('설정하기'),
                 ),
               ],
-            )
-          else
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: provider.nextMonthGoals.map((goal) {
-                return Chip(
-                  avatar: Text(goal.emoji ?? '🎯'),
-                  label: Text(goal.title),
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                );
-              }).toList(),
             ),
+          ] else
+            const SizedBox.shrink(),
         ],
       ),
     );

@@ -39,17 +39,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   void initState() {
     super.initState();
+    print('달력 화면: 초기화 시작');
     _selectedDay = AppDateUtils.getCurrentDate();
     _selectedChecks = ValueNotifier([]);
     _loadInitialData();
+    print('달력 화면: 초기화 완료');
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    print('달력 화면: 의존성 변경 감지');
     final currentDate = AppDateUtils.getCurrentDate(context);
     
     if (!AppDateUtils.isSameDay(_selectedDay, currentDate)) {
+      print('달력 화면: 날짜 변경으로 인한 데이터 리로드');
       setState(() {
         _selectedDay = currentDate;
         _focusedDay = currentDate;
@@ -58,70 +62,55 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    print('달력 화면: 종료');
+    _selectedChecks.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadInitialData() async {
+    print('달력 화면: 초기 데이터 로드 시작');
     setState(() => _isLoading = true);
     try {
       await _loadMonthData();
       _loadSelectedDayChecks();
     } finally {
       setState(() => _isLoading = false);
+      print('달력 화면: 초기 데이터 로드 완료');
     }
   }
 
   Future<void> _loadMonthData() async {
+    print('달력 화면: ${_focusedDay.year}년 ${_focusedDay.month}월 데이터 로드 시작');
     final provider = context.read<GoalProvider>();
     await provider.loadCalendarMonthGoals(_focusedDay);
     setState(() {
       _currentMonthGoals = provider.calendarMonthGoals;
     });
+    print('달력 화면: ${_focusedDay.year}년 ${_focusedDay.month}월 데이터 로드 완료 - 목표 ${_currentMonthGoals.length}개');
   }
 
-  @override
-  void dispose() {
-    _selectedChecks.dispose();
-    super.dispose();
+  List<DailyCheck> _getChecksForDay(GoalProvider provider, DateTime day) {
+    final normalizedDay = DateTime(day.year, day.month, day.day);
+    return provider.getDailyChecksByDate(normalizedDay);
   }
 
   void _loadSelectedDayChecks() {
     if (_selectedDay == null) return;
     
+    print('달력 화면: 선택된 날짜(${_selectedDay!.year}년 ${_selectedDay!.month}월 ${_selectedDay!.day}일) 체크 데이터 로드');
     final goalProvider = context.read<GoalProvider>();
-    final checks = goalProvider.getCachedDailyChecks(_selectedDay!);
+    final checks = goalProvider.getDailyChecksByDate(_selectedDay!);
     
     setState(() {
       _selectedChecks.value = checks;
     });
-    
-    // 캐시된 데이터가 없거나 오늘 날짜인 경우 새로 로드
-    if (checks.isEmpty || AppDateUtils.isSameDay(_selectedDay, AppDateUtils.getCurrentDate(context))) {
-      goalProvider.loadDailyChecks(_selectedDay!).then((updatedChecks) {
-        if (mounted) {
-          setState(() {
-            _selectedChecks.value = updatedChecks;
-          });
-        }
-      });
-    }
-  }
-
-  List<DailyCheck> _getChecksForDay(GoalProvider provider, DateTime day) {
-    final normalizedDay = DateTime(day.year, day.month, day.day);
-    final checks = provider.getCachedDailyChecks(normalizedDay);
-    
-    // 데이터가 없으면 로드 요청
-    if (checks.isEmpty) {
-      provider.loadDailyChecks(normalizedDay).then((_) {
-        if (mounted) {
-          setState(() {});  // 데이터가 로드되면 화면 갱신
-        }
-      });
-    }
-    
-    return checks;
   }
 
   @override
   Widget build(BuildContext context) {
+    print('달력 화면: 화면 빌드 시작');
     return Scaffold(
       appBar: AppBar(
         title: const Text('월간 달성 현황'),
@@ -130,6 +119,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: TextButton(
               onPressed: () {
+                print('달력 화면: 오늘 날짜로 이동');
                 final today = AppDateUtils.getCurrentDate(context);
                 setState(() {
                   _selectedDay = today;
@@ -174,6 +164,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     .toList(),
                 onDaySelected: (selectedDay, focusedDay) {
                   if (!isSameDay(_selectedDay, selectedDay)) {
+                    print('달력 화면: 날짜 선택 - ${selectedDay.year}년 ${selectedDay.month}월 ${selectedDay.day}일');
                     setState(() {
                       _selectedDay = selectedDay;
                       _focusedDay = selectedDay;
@@ -182,6 +173,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   }
                 },
                 onPageChanged: (focusedDay) async {
+                  print('달력 화면: 월 변경 - ${focusedDay.year}년 ${focusedDay.month}월');
                   setState(() {
                     _focusedDay = focusedDay;
                   });
@@ -223,11 +215,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     final checks = _getChecksForDay(provider, _selectedDay ?? AppDateUtils.getCurrentDate(context));
                     
                     if (_currentMonthGoals.isEmpty) {
+                      print('달력 화면: 선택된 월의 목표 없음');
                       return const Center(
                         child: Text('선택한 월의 목표가 없습니다'),
                       );
                     }
                     
+                    print('달력 화면: 목표 목록 표시 - ${_currentMonthGoals.length}개');
                     return ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: _currentMonthGoals.length,
@@ -241,7 +235,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             isCompleted: false,
                           ),
                         );
-
+                        
                         return ListTile(
                           leading: Text(goal.emoji ?? '🎯'),
                           title: Text(

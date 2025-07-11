@@ -40,27 +40,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final DatabaseService _databaseService = DatabaseService();
 
   Future<void> _updateNotificationEnabled(AppSettings settings, bool value) async {
+    print('설정 화면: 알림 설정 변경 - ${value ? "활성화" : "비활성화"}');
     settings.notificationEnabled = value;
     await _storageService.saveSettings(settings);
     
     if (value) {
+      print('설정 화면: 알림 스케줄 등록');
       await _notificationService.scheduleDailyReminder();
     } else {
+      print('설정 화면: 모든 알림 취소');
       await _notificationService.cancelAllNotifications();
     }
   }
 
   Future<void> _updateNotificationTime(AppSettings settings) async {
+    print('설정 화면: 알림 시간 설정 시작');
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: settings.notificationTime,
     );
 
     if (picked != null) {
+      print('설정 화면: 알림 시간 변경 - ${picked.hour}시 ${picked.minute}분');
       settings.notificationTime = picked;
       await _storageService.saveSettings(settings);
       
       if (settings.notificationEnabled) {
+        print('설정 화면: 변경된 시간으로 알림 스케줄 업데이트');
         await _notificationService.scheduleDailyReminder();
       }
     }
@@ -68,22 +74,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // 테스트 모드 설정을 업데이트하고 관련 데이터를 새로고침합니다.
   Future<void> _updateTestMode(AppSettings settings, bool value) async {
+    print('설정 화면: 테스트 모드 ${value ? "활성화" : "비활성화"}');
     settings.isTestMode = value;
     if (!value) {
       settings.testDate = null;
+      print('설정 화면: 테스트 날짜 초기화');
     } else if (settings.testDate == null) {
       settings.testDate = AppDateUtils.getCurrentDate();
+      print('설정 화면: 테스트 날짜를 현재 날짜로 설정');
     }
     await _storageService.saveSettings(settings);
     
     // Provider 상태 업데이트
     if (mounted) {
+      print('설정 화면: Provider 상태 업데이트');
       context.read<GoalProvider>().updateSettings(settings);
     }
   }
 
   Future<void> _updateTestDate(AppSettings settings) async {
-    if (!settings.isTestMode) return;
+    print('설정 화면: 테스트 날짜 설정 시작');
+    if (!settings.isTestMode) {
+      print('설정 화면: 테스트 모드가 비활성화되어 있어 날짜 설정 불가');
+      return;
+    }
 
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -93,17 +107,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (picked != null) {
+      print('설정 화면: 테스트 날짜 변경 - ${picked.year}년 ${picked.month}월 ${picked.day}일');
       settings.testDate = picked;
       await _storageService.saveSettings(settings);
 
       // Provider 상태 업데이트
       if (mounted) {
+        print('설정 화면: Provider 상태 업데이트');
         context.read<GoalProvider>().updateSettings(settings);
       }
     }
   }
 
   Future<void> _showResetConfirmDialog(String title, String message, Function() onConfirm) async {
+    print('설정 화면: 초기화 확인 다이얼로그 표시 - $title');
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -111,11 +128,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: Text(message),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              print('설정 화면: 초기화 취소');
+              Navigator.of(context).pop();
+            },
             child: const Text('취소'),
           ),
           TextButton(
             onPressed: () {
+              print('설정 화면: 초기화 확인');
               Navigator.of(context).pop();
               onConfirm();
             },
@@ -130,19 +151,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _resetAllData() async {
+    print('설정 화면: 전체 데이터 초기화 시작');
     await _showResetConfirmDialog(
       '전체 데이터 초기화',
       '모든 목표와 체크 데이터, 앱 설정이 초기화되며\n앱 설치일이 현재 시점으로 변경됩니다.\n이 작업은 되돌릴 수 없습니다.',
       () async {
-        // 데이터베이스 초기화
+        print('설정 화면: 데이터베이스 초기화');
         await _databaseService.clearAllData();
         
-        // 설정 초기화
+        print('설정 화면: 설정 초기화');
         final defaultSettings = AppSettings();
         await _storageService.saveSettings(defaultSettings);
         
         // Provider 상태 업데이트
         if (mounted) {
+          print('설정 화면: Provider 상태 업데이트');
           final settings = Provider.of<AppSettings>(context, listen: false);
           settings
             ..notificationEnabled = defaultSettings.notificationEnabled
@@ -154,6 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // GoalProvider 상태 업데이트
           context.read<GoalProvider>().updateSettings(settings);
           
+          print('설정 화면: 초기화 완료 메시지 표시');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('모든 데이터가 초기화되었습니다.'),
@@ -167,6 +191,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('설정 화면: 화면 빌드 시작');
     return Consumer<AppSettings>(
       builder: (context, settings, child) {
         return Scaffold(

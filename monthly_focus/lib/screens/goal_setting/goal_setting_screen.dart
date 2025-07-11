@@ -54,15 +54,18 @@ class _GoalSettingScreenState extends State<GoalSettingScreen> {
   @override
   void initState() {
     super.initState();
+    print('목표 설정 화면: 초기화 시작');
     // 초기화 시 랜덤 이모지 4개 선택
     final random = Random();
     _randomEmojis = List.generate(4, (index) {
       return _allEmojis[random.nextInt(_allEmojis.length)];
     });
+    print('목표 설정 화면: 랜덤 이모지 4개 생성 완료');
   }
 
   @override
   void dispose() {
+    print('목표 설정 화면: 리소스 정리');
     for (var controller in _controllers) {
       controller.dispose();
     }
@@ -70,54 +73,65 @@ class _GoalSettingScreenState extends State<GoalSettingScreen> {
   }
 
   Future<void> _saveGoals() async {
+    print('목표 설정 화면: 목표 저장 시작');
     final goalProvider = context.read<GoalProvider>();
     
     // 모든 필드가 채워져있는지 확인
     if (_controllers.any((controller) => controller.text.isEmpty)) {
+      print('목표 설정 화면: 빈 목표가 있어 저장 실패');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('모든 목표를 입력해주세요')),
       );
       return;
     }
 
+    print('목표 설정 화면: ${widget.isForCurrentMonth ? "이번 달" : "다음 달"} 목표 저장 시작');
     // 목표 저장
     for (int i = 0; i < 4; i++) {
       final emoji = _emojis[i] ?? _randomEmojis[i]; // null이면 랜덤 이모지 사용
+      final title = _controllers[i].text;
+      print('목표 설정 화면: ${i + 1}번 목표 저장 - $emoji $title');
       
       if (widget.isForCurrentMonth) {
         // 현재 월의 목표 저장
         await goalProvider.addCurrentMonthGoal(
-          _controllers[i].text,
+          title,
           emoji,
           i + 1,
         );
       } else {
         // 다음 달 목표 저장
         await goalProvider.addGoal(
-          _controllers[i].text,
+          title,
           emoji,
           i + 1,
         );
       }
     }
 
+    print('목표 설정 화면: 모든 목표 저장 완료');
     if (mounted) {
       Navigator.of(context).pop();
     }
   }
 
   String _getTitle() {
-    return widget.isForCurrentMonth ? '이번 달 목표 설정' : '다음 달 목표 설정';
+    final title = widget.isForCurrentMonth ? '이번 달 목표 설정' : '다음 달 목표 설정';
+    print('목표 설정 화면: 제목 반환 - $title');
+    return title;
   }
 
   String _getDescription() {
-    return widget.isForCurrentMonth
+    final description = widget.isForCurrentMonth
         ? '이번 달에 집중할 4가지 목표를 입력해주세요'
         : '다음 달에 집중할 4가지 목표를 입력해주세요';
+    print('목표 설정 화면: 설명 반환 - $description');
+    return description;
   }
 
   @override
   Widget build(BuildContext context) {
+    print('목표 설정 화면: 화면 빌드 시작');
     return Scaffold(
       appBar: AppBar(
         title: Text(_getTitle()),
@@ -143,8 +157,9 @@ class _GoalSettingScreenState extends State<GoalSettingScreen> {
                 child: GoalInputField(
                   controller: _controllers[index],
                   position: index + 1,
-                  emoji: _emojis[index] ?? _randomEmojis[index], // 랜덤 이모지 표시
+                  emoji: _emojis[index] ?? _randomEmojis[index],
                   onEmojiSelected: (emoji) {
+                    print('목표 설정 화면: ${index + 1}번 목표 이모지 선택 - $emoji');
                     setState(() {
                       _emojis[index] = emoji;
                     });

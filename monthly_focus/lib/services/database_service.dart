@@ -152,4 +152,20 @@ class DatabaseService {
       );
     });
   }
+
+  // 특정 월의 모든 체크 데이터를 한 번에 가져옵니다.
+  Future<List<DailyCheck>> getDailyChecksByMonth(DateTime month) async {
+    final db = await database;
+    final startDate = DateTime(month.year, month.month, 1);
+    final endDate = DateTime(month.year, month.month + 1, 0);
+    
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT dc.* 
+      FROM daily_checks dc
+      WHERE date(dc.date) >= date(?) AND date(dc.date) <= date(?)
+      ORDER BY dc.date ASC
+    ''', [startDate.toIso8601String(), endDate.toIso8601String()]);
+    
+    return List.generate(maps.length, (i) => DailyCheck.fromMap(maps[i]));
+  }
 } 

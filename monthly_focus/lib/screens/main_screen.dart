@@ -28,15 +28,37 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  late final List<Widget> _screens;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const CalendarScreen(),
-    const SettingsScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    print('메인 화면: 초기화 시작');
+    _screens = [
+      const HomeScreen(),
+      const CalendarScreen(),
+      const SettingsScreen(),
+    ];
+    print('메인 화면: 초기화 완료');
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    print('메인 화면: 의존성 변경 감지');
+  }
+
+  void _handleTabChange(int index) {
+    print('메인 화면: 탭 변경 - ${_getTabName(index)}으로 이동 시작');
+    setState(() {
+      _currentIndex = index;
+    });
+    print('메인 화면: 탭 변경 완료');
+  }
 
   @override
   Widget build(BuildContext context) {
+    print('메인 화면: 화면 빌드 시작');
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -44,11 +66,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onDestinationSelected: _handleTabChange,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
@@ -68,5 +86,17 @@ class _MainScreenState extends State<MainScreen> {
         ],
       ),
     );
+  }
+
+  String _getTabName(int index) {
+    print('메인 화면: 탭 이름 조회 - 인덱스 $index');
+    final name = switch (index) {
+      0 => '오늘',
+      1 => '달력',
+      2 => '설정',
+      _ => '알 수 없음'
+    };
+    print('메인 화면: 탭 이름 반환 - $name');
+    return name;
   }
 } 

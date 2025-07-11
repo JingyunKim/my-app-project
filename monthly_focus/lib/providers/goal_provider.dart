@@ -30,7 +30,7 @@ class GoalProvider with ChangeNotifier {
   List<Goal> _monthlyGoals = [];
   List<Goal> _nextMonthGoals = [];
   List<Goal> _calendarMonthGoals = [];
-  List<DailyCheck> _todayChecks = [];
+  List<DailyCheck> _monthlyChecks = [];
   late DateTime _currentMonth;
   late DateTime _selectedMonth;
   
@@ -76,7 +76,8 @@ class GoalProvider with ChangeNotifier {
   List<Goal> get monthlyGoals => _monthlyGoals;
   List<Goal> get nextMonthGoals => _nextMonthGoals;
   List<Goal> get calendarMonthGoals => _calendarMonthGoals;
-  List<DailyCheck> get todayChecks => _todayChecks;
+  List<DailyCheck> get monthlyChecks => _monthlyChecks;
+  List<DailyCheck> get todayChecks => getDailyChecksByDate(_now);
   DateTime get currentMonth => _currentMonth;
   DateTime get selectedMonth => _selectedMonth;
   DateTime get _now => _settings.isTestMode && _settings.testDate != null
@@ -93,14 +94,20 @@ class GoalProvider with ChangeNotifier {
     await loadTodayChecks();
   }
 
-  // 달력 화면의 선택된 월 목표를 로드합니다.
+  // 달력 화면의 선택된 월 목표와 체크 데이터를 로드합니다.
   Future<void> loadCalendarMonthGoals(DateTime month) async {
     _selectedMonth = month;
     final goals = await _db.getGoalsByMonth(month);
-    if (!listEquals(_calendarMonthGoals, goals)) {
-      _calendarMonthGoals = goals;
-      notifyListeners();
+    final checks = await _db.getDailyChecksByMonth(month);
+    
+    _calendarMonthGoals = goals;
+    
+    // 같은 월의 데이터인 경우에만 체크 데이터 업데이트
+    if (month.year == _currentMonth.year && month.month == _currentMonth.month) {
+      _monthlyChecks = checks;
     }
+    
+    notifyListeners();
   }
 
   // 다음 달 목표를 데이터베이스에서 로드합니다.
@@ -113,14 +120,16 @@ class GoalProvider with ChangeNotifier {
     }
   }
 
-  // 오늘의 목표 체크 상태를 로드합니다.
+  // 오늘의 체크 데이터를 로드합니다.
   Future<void> loadTodayChecks() async {
     final now = _now;
-    final checks = await _db.getDailyChecksByDate(
-      DateTime(now.year, now.month, now.day),
-    );
-    if (!listEquals(_todayChecks, checks)) {
-      _todayChecks = checks;
+    if (!_monthlyChecks.any((check) => 
+      check.date.year == now.year && 
+      check.date.month == now.month && 
+      check.date.day == now.day
+    )) {
+      final checks = await _db.getDailyChecksByDate(now);
+      _monthlyChecks.addAll(checks);
       notifyListeners();
     }
   }
@@ -173,9 +182,8 @@ class GoalProvider with ChangeNotifier {
   Future<void> toggleGoalCheck(Goal goal) async {
     final now = _now;
     final today = DateTime(now.year, now.month, now.day);
-    final key = _getCacheKey(today);
     
-    final existingCheck = _todayChecks.firstWhere(
+    final existingCheck = getDailyChecksByDate(today).firstWhere(
       (check) => check.goalId == goal.id,
       orElse: () => DailyCheck(
         goalId: goal.id!,
@@ -193,23 +201,17 @@ class GoalProvider with ChangeNotifier {
       );
       final checkId = await _db.insertDailyCheck(newCheck);
       updatedCheck = newCheck.copyWith(id: checkId);
+      _monthlyChecks.add(updatedCheck);
     } else {
       updatedCheck = existingCheck.copyWith(
         isCompleted: !existingCheck.isCompleted,
       );
       await _db.updateDailyCheck(updatedCheck);
-    }
-
-    _dailyChecksCache[key] = _dailyChecksCache[key]?.map((check) {
-      return check.goalId == goal.id ? updatedCheck : check;
-    }).toList() ?? [updatedCheck];
-    _cacheTimestamps[key] = DateTime.now();
-    
-    final checkIndex = _todayChecks.indexWhere((check) => check.goalId == goal.id);
-    if (checkIndex >= 0) {
-      _todayChecks[checkIndex] = updatedCheck;
-    } else {
-      _todayChecks.add(updatedCheck);
+      
+      final index = _monthlyChecks.indexWhere((check) => check.id == existingCheck.id);
+      if (index >= 0) {
+        _monthlyChecks[index] = updatedCheck;
+      }
     }
 
     notifyListeners();
@@ -233,6 +235,15 @@ class GoalProvider with ChangeNotifier {
     }
     
     return true;
+  }
+
+  // 특정 날짜의 체크 데이터를 가져옵니다.
+  List<DailyCheck> getDailyChecksByDate(DateTime date) {
+    return _monthlyChecks.where((check) => 
+      check.date.year == date.year && 
+      check.date.month == date.month && 
+      check.date.day == date.day
+    ).toList();
   }
 
   @override
@@ -259,7 +270,7 @@ class GoalProvider with ChangeNotifier {
     _monthlyGoals = [];
     _nextMonthGoals = [];
     _calendarMonthGoals = [];
-    _todayChecks = [];
+    _monthlyChecks = []; // 추가: 월별 체크 데이터 초기화
     
     // 상태 변경을 즉시 알림
     notifyListeners();
@@ -275,7 +286,7 @@ class GoalProvider with ChangeNotifier {
     _monthlyGoals = [];
     _nextMonthGoals = [];
     _calendarMonthGoals = [];
-    _todayChecks = [];
+    _monthlyChecks = []; // 추가: 월별 체크 데이터 초기화
     _dailyChecksCache.clear();
     _cacheTimestamps.clear();
     _loadingDates.clear();
