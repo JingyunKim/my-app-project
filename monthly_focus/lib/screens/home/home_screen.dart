@@ -5,7 +5,7 @@ import '../../models/daily_check.dart';
 import '../../services/storage_service.dart';
 import '../goal_setting/goal_setting_screen.dart';
 import '../../widgets/goal/goal_check_card.dart';
-import '../../utils/date_utils.dart';
+import '../../utils/app_date_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

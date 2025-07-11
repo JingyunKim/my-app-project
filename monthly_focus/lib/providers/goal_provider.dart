@@ -20,7 +20,7 @@ import '../models/daily_check.dart';
 import '../models/app_settings.dart';
 import '../services/database_service.dart';
 import '../services/storage_service.dart';
-import '../utils/date_utils.dart';
+import '../utils/app_date_utils.dart';
 
 class GoalProvider with ChangeNotifier {
   final DatabaseService _db = DatabaseService();
@@ -251,5 +251,56 @@ class GoalProvider with ChangeNotifier {
     _dailyChecksCache.clear();
     _cacheTimestamps.clear();
     super.dispose();
+  }
+
+  // 설정 업데이트
+  void updateSettings(AppSettings settings) {
+    // 테스트 모드 변경을 반영하기 위해 오늘의 체크 상태 다시 로드
+    loadTodayChecks();
+  }
+
+  // 모든 데이터 초기화
+  void clearAllData() {
+    _monthlyGoals = [];
+    _nextMonthGoals = [];
+    _calendarMonthGoals = [];
+    _todayChecks = [];
+    _dailyChecksCache.clear();
+    _cacheTimestamps.clear();
+    _loadingDates.clear();
+    notifyListeners();
+  }
+
+  // 현재 월의 목표 추가
+  Future<void> addCurrentMonthGoal(String title, String emoji, int position) async {
+    final goal = Goal(
+      title: title,
+      emoji: emoji,
+      position: position,
+      month: _currentMonth,
+    );
+    
+    final goalId = await _db.insertGoal(goal);
+    final updatedGoal = goal.copyWith(id: goalId);
+    
+    _monthlyGoals.add(updatedGoal);
+    notifyListeners();
+  }
+
+  // 다음 달 목표 추가
+  Future<void> addGoal(String title, String emoji, int position) async {
+    final nextMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
+    final goal = Goal(
+      title: title,
+      emoji: emoji,
+      position: position,
+      month: nextMonth,
+    );
+    
+    final goalId = await _db.insertGoal(goal);
+    final updatedGoal = goal.copyWith(id: goalId);
+    
+    _nextMonthGoals.add(updatedGoal);
+    notifyListeners();
   }
 } 

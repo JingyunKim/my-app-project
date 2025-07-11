@@ -23,7 +23,7 @@ import 'screens/main_screen.dart';
 import 'services/storage_service.dart';
 import 'services/notification_service.dart';
 import 'models/app_settings.dart';
-import 'utils/date_utils.dart';
+import 'utils/app_date_utils.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,12 +43,8 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider<AppSettings>.value(value: settings),
-        ChangeNotifierProxyProvider<AppSettings, GoalProvider>(
+        ChangeNotifierProvider<GoalProvider>(
           create: (_) => GoalProvider(settings),
-          update: (_, settings, previous) {
-            previous?.updateSettings(settings);
-            return previous ?? GoalProvider(settings);
-          },
         ),
       ],
       child: const MyApp(),
@@ -64,15 +60,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: '한 달의 집중',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
-        cardTheme: const CardThemeData(
-          elevation: 2,
-          margin: EdgeInsets.zero,
-        ),
       ),
       home: const MainScreen(),
     );

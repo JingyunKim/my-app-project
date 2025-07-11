@@ -24,7 +24,7 @@ import '../../services/notification_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/database_service.dart'; // Added import for DatabaseService
 import '../../models/app_settings.dart';
-import '../../utils/date_utils.dart';
+import '../../utils/app_date_utils.dart';
 import '../../providers/goal_provider.dart'; // Added import for GoalProvider
 
 class SettingsScreen extends StatefulWidget {

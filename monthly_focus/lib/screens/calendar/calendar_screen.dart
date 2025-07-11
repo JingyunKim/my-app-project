@@ -20,7 +20,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../providers/goal_provider.dart';
 import '../../models/goal.dart';
 import '../../models/daily_check.dart';
-import '../../utils/date_utils.dart';
+import '../../utils/app_date_utils.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
