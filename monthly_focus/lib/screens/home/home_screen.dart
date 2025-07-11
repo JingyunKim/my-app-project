@@ -16,95 +16,107 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _storage = StorageService();
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _loadGoals();
-    _showWelcomeGuideIfNeeded();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    setState(() => _isLoading = true);
+    try {
+      await _loadGoals();
+      await _showWelcomeGuideIfNeeded();
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _showWelcomeGuideIfNeeded() async {
     if (!_storage.isWelcomeGuideShown()) {
-      // 화면이 완전히 빌드된 후 팝업 표시
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: const Text('한 달의 집중에 오신 것을 환영합니다! 🎉'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '매월 4가지 목표를 설정하고 달성해보세요.',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 16),
-                const Text('• 매월 25일부터 다음 달 목표를 설정할 수 있어요'),
-                const Text('• 매일 목표 달성 여부를 체크해보세요'),
-                const Text('• 달력탭에서 월간 달성 현황을 확인할 수 있어요'),
-                const SizedBox(height: 16),
-                Text(
-                  '지금 바로 이번 달의 목표를 설정해보세요!',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  _storage.markWelcomeGuideAsShown();
-                  Navigator.of(context).pop();
-                  _showGoalSetting();
-                },
-                child: const Text('이번달 목표 설정하기'),
-              ),
-            ],
-          ),
-        );
-      });
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => _buildWelcomeDialog(),
+      );
     }
+  }
+
+  Widget _buildWelcomeDialog() {
+    return AlertDialog(
+      title: const Text('한 달의 집중에 오신 것을 환영합니다! 🎉'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '매월 4가지 목표를 설정하고 달성해보세요.',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 16),
+          const Text('• 매월 25일부터 다음 달 목표를 설정할 수 있어요'),
+          const Text('• 매일 목표 달성 여부를 체크해보세요'),
+          const Text('• 달력탭에서 월간 달성 현황을 확인할 수 있어요'),
+          const SizedBox(height: 16),
+          Text(
+            '지금 바로 이번 달의 목표를 설정해보세요!',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            _storage.markWelcomeGuideAsShown();
+            Navigator.of(context).pop();
+            _showGoalSetting(isForCurrentMonth: true);
+          },
+          child: const Text('이번달 목표 설정하기'),
+        ),
+      ],
+    );
   }
 
   Future<void> _loadGoals() async {
     final goalProvider = context.read<GoalProvider>();
     await goalProvider.loadMonthlyGoals();
     await goalProvider.loadNextMonthGoals();
-    await goalProvider.loadTodayChecks();
   }
 
   void _showGoalSetting({bool isForCurrentMonth = false}) {
     final goalProvider = context.read<GoalProvider>();
+    final String errorMessage;
     
     if (isForCurrentMonth) {
       if (!goalProvider.canSetCurrentMonthGoals()) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('이번 달 목표는 1일부터 24일까지만 설정할 수 있습니다'),
-          ),
-        );
-        return;
+        errorMessage = '이번 달 목표는 1일부터 24일까지만 설정할 수 있습니다';
+      } else {
+        errorMessage = '';
       }
     } else {
       if (!goalProvider.canSetNextMonthGoals()) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('다음 달 목표는 이번 달 25일부터 설정할 수 있습니다'),
-          ),
-        );
-        return;
+        errorMessage = '다음 달 목표는 이번 달 25일부터 설정할 수 있습니다';
+      } else {
+        errorMessage = '';
       }
+    }
+
+    if (errorMessage.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+      return;
     }
 
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => GoalSettingScreen(isForCurrentMonth: isForCurrentMonth),
       ),
-    );
+    ).then((_) => _loadGoals());
   }
 
   @override
@@ -113,19 +125,21 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('오늘의 목표'),
       ),
-      body: Consumer<GoalProvider>(
-        builder: (context, provider, child) {
-          return Column(
-            children: [
-              Expanded(
-                child: _buildCurrentMonthGoals(provider),
-              ),
-              const Divider(height: 1),
-              _buildNextMonthSection(provider),
-            ],
-          );
-        },
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Consumer<GoalProvider>(
+              builder: (context, provider, child) {
+                return Column(
+                  children: [
+                    Expanded(
+                      child: _buildCurrentMonthGoals(provider),
+                    ),
+                    const Divider(height: 1),
+                    _buildNextMonthSection(provider),
+                  ],
+                );
+              },
+            ),
     );
   }
 
@@ -157,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
           (check) => check.goalId == goal.id,
           orElse: () => DailyCheck(
             goalId: goal.id!,
-            date: AppDateUtils.getCurrentDate(context),
+            date: AppDateUtils.getCurrentDate(),
             isCompleted: false,
           ),
         );
@@ -175,26 +189,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNextMonthSection(GoalProvider provider) {
-    // 목표 설정 가능 여부 체크
     if (!provider.canSetNextMonthGoals()) {
-      return const SizedBox.shrink(); // 또는 Container()
+      return const SizedBox.shrink();
     }
 
-    final now = AppDateUtils.getCurrentDate(context);
+    final now = AppDateUtils.getCurrentDate();
     final nextMonth = DateTime(now.year, now.month + 1);
     
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-  gradient: LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [
-      Theme.of(context).colorScheme.surfaceTint.withOpacity(0.1),
-      Theme.of(context).colorScheme.surface,
-    ],
-  ),
-),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Theme.of(context).colorScheme.surfaceTint.withOpacity(0.1),
+            Theme.of(context).colorScheme.surface,
+          ],
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,

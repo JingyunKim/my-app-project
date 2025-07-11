@@ -33,39 +33,31 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _focusedDay = AppDateUtils.getCurrentDate();
   DateTime? _selectedDay;
   late final ValueNotifier<List<DailyCheck>> _selectedChecks;
-  List<Goal> _currentMonthGoals = [];  // 현재 보고 있는 달의 목표
+  List<Goal> _currentMonthGoals = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _selectedDay = AppDateUtils.getCurrentDate();
     _selectedChecks = ValueNotifier([]);
-    _loadMonthData();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    setState(() => _isLoading = true);
+    try {
+      await _loadMonthData();
+      _loadSelectedDayChecks();
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   // 선택된 월의 데이터 로드
   Future<void> _loadMonthData() async {
     final provider = context.read<GoalProvider>();
-    
-    // 해당 월의 목표 로드
-    final goals = await provider.getGoalsByMonth(_focusedDay);
-    setState(() {
-      _currentMonthGoals = goals;
-    });
-
-    // 해당 월의 체크 데이터 미리 로드
-    final firstDay = DateTime(_focusedDay.year, _focusedDay.month, 1);
-    final lastDay = DateTime(_focusedDay.year, _focusedDay.month + 1, 0);
-
-    for (var day = firstDay; 
-         day.isBefore(lastDay.add(const Duration(days: 1))); 
-         day = day.add(const Duration(days: 1))) {
-      await provider.loadDailyChecks(day);
-    }
-    
-    if (mounted) {
-      setState(() {});
-    }
+    await provider.loadCalendarMonthGoals(_focusedDay);
   }
 
   @override
@@ -91,6 +83,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
       body: Consumer<GoalProvider>(
         builder: (context, provider, child) {
+          _currentMonthGoals = provider.calendarMonthGoals;
+          
+          if (_isLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
           return Column(
             children: [
               _buildMonthlyGoals(),
@@ -105,16 +105,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 },
                 eventLoader: (day) => provider.getCachedDailyChecks(day),
                 onDaySelected: (selectedDay, focusedDay) {
-                  setState(() {
-                    _selectedDay = selectedDay;
-                    _focusedDay = focusedDay;
-                  });
-                  _loadSelectedDayChecks();
+                  if (!isSameDay(_selectedDay, selectedDay)) {
+                    setState(() {
+                      _selectedDay = selectedDay;
+                      _focusedDay = focusedDay;
+                    });
+                    _loadSelectedDayChecks();
+                  }
                 },
                 onPageChanged: (focusedDay) {
-                  setState(() {
-                    _focusedDay = focusedDay;
-                  });
+                  setState(() => _focusedDay = focusedDay);
                   _loadMonthData();
                 },
                 calendarStyle: const CalendarStyle(
@@ -130,12 +130,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 child: ValueListenableBuilder<List<DailyCheck>>(
                   valueListenable: _selectedChecks,
                   builder: (context, checks, _) {
-                    if (checks.isEmpty) {
+                    if (_currentMonthGoals.isEmpty) {
                       return const Center(
-                        child: Text('선택한 날짜의 체크 기록이 없습니다'),
+                        child: Text('선택한 월의 목표가 없습니다'),
                       );
                     }
-
+                    
                     return ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: _currentMonthGoals.length,

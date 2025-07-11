@@ -14,6 +14,7 @@
  */
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/goal.dart';
 import '../models/daily_check.dart';
 import '../models/app_settings.dart';
@@ -24,60 +25,127 @@ import '../utils/date_utils.dart';
 class GoalProvider with ChangeNotifier {
   final DatabaseService _db = DatabaseService();
   final StorageService _storage = StorageService();
-  AppSettings _settings;
+  final AppSettings _settings;
   
   List<Goal> _monthlyGoals = [];
-  List<Goal> _nextMonthGoals = [];  // 다음 달 목표 저장
+  List<Goal> _nextMonthGoals = [];
+  List<Goal> _calendarMonthGoals = [];
   List<DailyCheck> _todayChecks = [];
   late DateTime _currentMonth;
-  Map<DateTime, List<DailyCheck>> _dailyChecksCache = {};
-  Set<DateTime> _loadingDates = {};
+  late DateTime _selectedMonth;
+  
+  // 캐시 관리 개선
+  final Map<String, List<DailyCheck>> _dailyChecksCache = {};
+  final Set<String> _loadingDates = {};
+  
+  // 캐시 만료 시간 설정 (1시간)
+  static const cacheDuration = Duration(hours: 1);
+  final Map<String, DateTime> _cacheTimestamps = {};
 
   GoalProvider(this._settings) {
     _currentMonth = AppDateUtils.getCurrentDate();
+    _selectedMonth = _currentMonth;
+    _startCacheCleanupTimer();
+  }
+
+  // 주기적인 캐시 정리를 위한 타이머
+  void _startCacheCleanupTimer() {
+    Future.delayed(const Duration(minutes: 30), () {
+      _cleanExpiredCache();
+      _startCacheCleanupTimer();
+    });
+  }
+
+  // 만료된 캐시 정리
+  void _cleanExpiredCache() {
+    final now = DateTime.now();
+    _cacheTimestamps.removeWhere((key, timestamp) {
+      if (now.difference(timestamp) > cacheDuration) {
+        _dailyChecksCache.remove(key);
+        return true;
+      }
+      return false;
+    });
+  }
+
+  // 캐시 키 생성
+  String _getCacheKey(DateTime date) {
+    return '${date.year}-${date.month}-${date.day}';
   }
 
   List<Goal> get monthlyGoals => _monthlyGoals;
-  List<Goal> get nextMonthGoals => _nextMonthGoals;  // 다음 달 목표 getter
+  List<Goal> get nextMonthGoals => _nextMonthGoals;
+  List<Goal> get calendarMonthGoals => _calendarMonthGoals;
   List<DailyCheck> get todayChecks => _todayChecks;
   DateTime get currentMonth => _currentMonth;
+  DateTime get selectedMonth => _selectedMonth;
 
   DateTime get _now => AppDateUtils.getCurrentDate();
 
-  // 현재 월의 목표 로드
+  // 현재 월의 목표 로드 (오늘 화면용)
   Future<void> loadMonthlyGoals() async {
-    _monthlyGoals = await _db.getGoalsByMonth(_currentMonth);
-    notifyListeners();
+    final goals = await _db.getGoalsByMonth(_currentMonth);
+    if (!listEquals(_monthlyGoals, goals)) {
+      _monthlyGoals = goals;
+      notifyListeners();
+    }
+    await loadTodayChecks();
+  }
+
+  // 달력 화면의 선택된 월 목표 로드
+  Future<void> loadCalendarMonthGoals(DateTime month) async {
+    _selectedMonth = month;
+    final goals = await _db.getGoalsByMonth(month);
+    if (!listEquals(_calendarMonthGoals, goals)) {
+      _calendarMonthGoals = goals;
+      notifyListeners();
+    }
   }
 
   // 다음 달 목표 로드
   Future<void> loadNextMonthGoals() async {
     final nextMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
-    _nextMonthGoals = await _db.getGoalsByMonth(nextMonth);
-    notifyListeners();
+    final goals = await _db.getGoalsByMonth(nextMonth);
+    if (!listEquals(_nextMonthGoals, goals)) {
+      _nextMonthGoals = goals;
+      notifyListeners();
+    }
   }
 
   // 오늘의 체크 상태 로드
   Future<void> loadTodayChecks() async {
     final now = _now;
-    _todayChecks = await _db.getDailyChecksByDate(
+    final checks = await _db.getDailyChecksByDate(
       DateTime(now.year, now.month, now.day),
     );
-    notifyListeners();
+    if (!listEquals(_todayChecks, checks)) {
+      _todayChecks = checks;
+      notifyListeners();
+    }
   }
 
   // 캐시된 체크 데이터 가져오기
   List<DailyCheck> getCachedDailyChecks(DateTime date) {
-    final key = DateTime(date.year, date.month, date.day);
+    final key = _getCacheKey(date);
     return _dailyChecksCache[key] ?? [];
   }
 
   // 비동기로 데이터 로드 및 캐시 업데이트
   Future<List<DailyCheck>> loadDailyChecks(DateTime date) async {
-    final key = DateTime(date.year, date.month, date.day);
+    final key = _getCacheKey(date);
     
-    // 이미 로딩 중이거나 캐시에 있는 경우 캐시된 데이터 반환
-    if (_loadingDates.contains(key) || _dailyChecksCache.containsKey(key)) {
+    // 캐시가 유효한 경우 캐시된 데이터 반환
+    if (_dailyChecksCache.containsKey(key) && 
+        _cacheTimestamps.containsKey(key) &&
+        DateTime.now().difference(_cacheTimestamps[key]!) <= cacheDuration) {
+      return _dailyChecksCache[key]!;
+    }
+
+    // 이미 로딩 중인 경우 대기
+    if (_loadingDates.contains(key)) {
+      while (_loadingDates.contains(key)) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
       return _dailyChecksCache[key] ?? [];
     }
 
@@ -86,6 +154,7 @@ class GoalProvider with ChangeNotifier {
     try {
       final checks = await _db.getDailyChecksByDate(date);
       _dailyChecksCache[key] = checks;
+      _cacheTimestamps[key] = DateTime.now();
       notifyListeners();
       return checks;
     } finally {
@@ -93,64 +162,11 @@ class GoalProvider with ChangeNotifier {
     }
   }
 
-  // 캐시 정리
-  void clearOldCache() {
-    final now = _now;
-    final oneMonthAgo = DateTime(now.year, now.month - 1, now.day);
-    
-    _dailyChecksCache.removeWhere((date, _) => date.isBefore(oneMonthAgo));
-  }
-
-  // 특정 날짜의 체크 상태 조회 (달력용)
-  Future<List<DailyCheck>> getDailyChecks(DateTime date) async {
-    return await _db.getDailyChecksByDate(
-      DateTime(date.year, date.month, date.day),
-    );
-  }
-
-  // 새로운 목표 추가
-  Future<void> addGoal(String title, String? emoji, int position) async {
-    // 다음 달 1일 생성
-    final now = _now;
-    final nextMonth = DateTime(now.year, now.month + 1, 1);
-
-    final goal = Goal(
-      month: nextMonth,
-      position: position,
-      title: title,
-      emoji: emoji,
-    );
-
-    await _db.insertGoal(goal);
-    await loadMonthlyGoals();
-    await loadNextMonthGoals();
-  }
-
-  // 현재 월 목표 추가
-  Future<void> addCurrentMonthGoal(String title, String? emoji, int position) async {
-    final now = _now;
-    final currentMonth = DateTime(now.year, now.month, 1);
-
-    final goal = Goal(
-      month: currentMonth,
-      position: position,
-      title: title,
-      emoji: emoji,
-    );
-
-    await _db.insertGoal(goal);
-    
-    // 모든 관련 데이터 새로고침
-    await loadMonthlyGoals();
-    await loadTodayChecks();
-    _dailyChecksCache.clear(); // 달력 화면의 캐시 초기화
-    notifyListeners();
-  }
-
   // 목표 체크 상태 업데이트
   Future<void> toggleGoalCheck(Goal goal) async {
     final now = _now;
     final today = DateTime(now.year, now.month, now.day);
+    final key = _getCacheKey(today);
     
     // 이미 체크된 항목이 있는지 확인
     final existingCheck = _todayChecks.firstWhere(
@@ -180,13 +196,21 @@ class GoalProvider with ChangeNotifier {
       );
     }
 
+    // 캐시 무효화
+    _dailyChecksCache.remove(key);
+    _cacheTimestamps.remove(key);
+    
     await loadTodayChecks();
+    
+    // 체크한 날짜가 달력에서 보고 있는 월에 속하면 캐시 업데이트
+    if (today.year == _selectedMonth.year && today.month == _selectedMonth.month) {
+      await loadDailyChecks(today);
+    }
   }
 
-  // 월 변경
-  void changeMonth(DateTime month) {
-    _currentMonth = month;
-    loadMonthlyGoals();
+  // 달력 화면의 월 변경
+  Future<void> changeCalendarMonth(DateTime month) async {
+    await loadCalendarMonthGoals(month);
   }
 
   // 다음 달 목표 설정 가능 여부 확인
@@ -222,24 +246,10 @@ class GoalProvider with ChangeNotifier {
     return now.day <= 24;
   }
 
-  // 설정 업데이트
-  void updateSettings(AppSettings settings) {
-    _settings = settings;
-    loadTodayChecks(); // 테스트 모드 변경을 반영하기 위해 오늘의 체크 상태 다시 로드
-  }
-
-  // 특정 월의 목표 조회
-  Future<List<Goal>> getGoalsByMonth(DateTime month) async {
-    return await _db.getGoalsByMonth(month);
-  }
-
-  // 모든 데이터 초기화
-  void clearAllData() {
-    _monthlyGoals = [];
-    _nextMonthGoals = [];
-    _todayChecks = [];
+  @override
+  void dispose() {
     _dailyChecksCache.clear();
-    _loadingDates.clear();
-    notifyListeners();
+    _cacheTimestamps.clear();
+    super.dispose();
   }
 } 

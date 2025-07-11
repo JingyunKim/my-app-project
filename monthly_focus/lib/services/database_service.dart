@@ -42,60 +42,67 @@ class DatabaseService {
   }
 
   Future<void> _createTables(Database db, int version) async {
-    // 목표 테이블 생성
-    await db.execute('''
-      CREATE TABLE goals (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        month TEXT NOT NULL,
-        position INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        emoji TEXT,
-        created_at TEXT NOT NULL
-      )
-    ''');
+    // 트랜잭션 사용
+    await db.transaction((txn) async {
+      // 목표 테이블 생성
+      await txn.execute('''
+        CREATE TABLE goals (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          month TEXT NOT NULL,
+          position INTEGER NOT NULL,
+          title TEXT NOT NULL,
+          emoji TEXT,
+          created_at TEXT NOT NULL
+        )
+      ''');
 
-    // 체크 테이블 생성
-    await db.execute('''
-      CREATE TABLE daily_checks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        goal_id INTEGER NOT NULL,
-        date TEXT NOT NULL,
-        is_completed INTEGER NOT NULL,
-        checked_at TEXT NOT NULL,
-        FOREIGN KEY (goal_id) REFERENCES goals (id)
-      )
-    ''');
+      // 체크 테이블 생성
+      await txn.execute('''
+        CREATE TABLE daily_checks (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          goal_id INTEGER NOT NULL,
+          date TEXT NOT NULL,
+          is_completed INTEGER NOT NULL DEFAULT 0,
+          checked_at TEXT NOT NULL,
+          FOREIGN KEY (goal_id) REFERENCES goals (id) ON DELETE CASCADE
+        )
+      ''');
 
-    // 인덱스 생성
-    await db.execute('CREATE INDEX idx_goals_month ON goals(month)');
-    await db.execute('CREATE INDEX idx_daily_checks_date ON daily_checks(date)');
-    await db.execute('CREATE INDEX idx_daily_checks_goal_id ON daily_checks(goal_id)');
+      // 인덱스 생성
+      await txn.execute('CREATE INDEX idx_goals_month ON goals(month, position)');
+      await txn.execute('CREATE INDEX idx_daily_checks_date_goal ON daily_checks(date, goal_id)');
+      await txn.execute('CREATE INDEX idx_daily_checks_goal_date ON daily_checks(goal_id, date)');
+    });
   }
 
   // 목표 관련 메서드
   Future<int> insertGoal(Goal goal) async {
     final db = await database;
-    return await db.insert('goals', goal.toMap());
+    return await db.transaction((txn) async {
+      return await txn.insert('goals', goal.toMap());
+    });
   }
 
   Future<List<Goal>> getGoalsByMonth(DateTime month) async {
-    final startOfMonth = DateTime(month.year, month.month, 1);
-    final endOfMonth = DateTime(month.year, month.month + 1, 0);
-    
     final db = await database;
+    final monthStr = '${month.year}-${month.month.toString().padLeft(2, '0')}';
+    
     final List<Map<String, dynamic>> maps = await db.query(
       'goals',
-      where: 'month BETWEEN ? AND ?',
-      whereArgs: [startOfMonth.toIso8601String(), endOfMonth.toIso8601String()],
-      orderBy: 'position ASC', // 목표 순서대로 정렬
+      where: "substr(month, 1, 7) = ?",
+      whereArgs: [monthStr],
+      orderBy: 'position ASC',
     );
+    
     return List.generate(maps.length, (i) => Goal.fromMap(maps[i]));
   }
 
   // 체크 관련 메서드
   Future<int> insertDailyCheck(DailyCheck check) async {
     final db = await database;
-    return await db.insert('daily_checks', check.toMap());
+    return await db.transaction((txn) async {
+      return await txn.insert('daily_checks', check.toMap());
+    });
   }
 
   Future<List<DailyCheck>> getDailyChecksByDate(DateTime date) async {
@@ -110,18 +117,35 @@ class DatabaseService {
 
   Future<void> updateDailyCheck(DailyCheck check) async {
     final db = await database;
-    await db.update(
-      'daily_checks',
-      check.toMap(),
-      where: 'id = ?',
-      whereArgs: [check.id],
-    );
+    await db.transaction((txn) async {
+      await txn.update(
+        'daily_checks',
+        check.toMap(),
+        where: 'id = ?',
+        whereArgs: [check.id],
+      );
+    });
   }
 
   // 데이터베이스 초기화
   Future<void> clearAllData() async {
     final db = await database;
-    await db.delete('daily_checks');
-    await db.delete('goals');
+    await db.transaction((txn) async {
+      await txn.delete('daily_checks');
+      await txn.delete('goals');
+    });
+  }
+
+  // 오래된 데이터 정리
+  Future<void> cleanupOldData(DateTime before) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      // 오래된 목표 삭제 (CASCADE로 연결된 체크도 자동 삭제)
+      await txn.delete(
+        'goals',
+        where: 'month < ?',
+        whereArgs: [before.toIso8601String()],
+      );
+    });
   }
 } 
