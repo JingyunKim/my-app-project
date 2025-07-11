@@ -79,11 +79,15 @@ class DatabaseService {
   }
 
   Future<List<Goal>> getGoalsByMonth(DateTime month) async {
+    final startOfMonth = DateTime(month.year, month.month, 1);
+    final endOfMonth = DateTime(month.year, month.month + 1, 0);
+    
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'goals',
-      where: 'month = ?',
-      whereArgs: [month.toIso8601String()],
+      where: 'month BETWEEN ? AND ?',
+      whereArgs: [startOfMonth.toIso8601String(), endOfMonth.toIso8601String()],
+      orderBy: 'position ASC', // 목표 순서대로 정렬
     );
     return List.generate(maps.length, (i) => Goal.fromMap(maps[i]));
   }

@@ -17,6 +17,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:math';
 import '../../providers/goal_provider.dart';
 import '../../widgets/goal/goal_input_field.dart';
 
@@ -39,6 +40,26 @@ class _GoalSettingScreenState extends State<GoalSettingScreen> {
   );
 
   final List<String?> _emojis = List.filled(4, null);
+  
+  // 기본 이모지 리스트 확장
+  final List<String> _allEmojis = [
+    '🎯', '✨', '💪', '🌟', '📚', '🎨', '🎵', '🏃', 
+    '🧘', '💡', '🌱', '🎮', '⚡️', '🔥', '🌈', '🎪',
+    '🎭', '🎸', '🎹', '🎨', '📝', '🎤', '🏆', '🌺',
+    '🦋', '🌙', '☀️', '⭐️', '🌊', '🍀', '🎪', '🎯'
+  ];
+  
+  late final List<String> _randomEmojis;
+
+  @override
+  void initState() {
+    super.initState();
+    // 초기화 시 랜덤 이모지 4개 선택
+    final random = Random();
+    _randomEmojis = List.generate(4, (index) {
+      return _allEmojis[random.nextInt(_allEmojis.length)];
+    });
+  }
 
   @override
   void dispose() {
@@ -61,18 +82,20 @@ class _GoalSettingScreenState extends State<GoalSettingScreen> {
 
     // 목표 저장
     for (int i = 0; i < 4; i++) {
+      final emoji = _emojis[i] ?? _randomEmojis[i]; // null이면 랜덤 이모지 사용
+      
       if (widget.isForCurrentMonth) {
         // 현재 월의 목표 저장
         await goalProvider.addCurrentMonthGoal(
           _controllers[i].text,
-          _emojis[i],
+          emoji,
           i + 1,
         );
       } else {
         // 다음 달 목표 저장
         await goalProvider.addGoal(
           _controllers[i].text,
-          _emojis[i],
+          emoji,
           i + 1,
         );
       }
@@ -120,7 +143,7 @@ class _GoalSettingScreenState extends State<GoalSettingScreen> {
                 child: GoalInputField(
                   controller: _controllers[index],
                   position: index + 1,
-                  emoji: _emojis[index],
+                  emoji: _emojis[index] ?? _randomEmojis[index], // 랜덤 이모지 표시
                   onEmojiSelected: (emoji) {
                     setState(() {
                       _emojis[index] = emoji;
