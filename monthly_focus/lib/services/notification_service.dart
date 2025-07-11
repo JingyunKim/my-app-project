@@ -51,8 +51,8 @@ class NotificationService {
   Future<void> scheduleDailyReminder() async {
     await _notifications.zonedSchedule(
       0,
-      '오늘의 목표를 체크해주세요',
-      '하루를 마무리하기 전에 목표 달성 여부를 체크해주세요',
+      '오늘 하루도 수고하셨어요! 🌙',
+      '목표 달성 체크로 오늘 하루를 마무리해보세요',
       _nextInstanceOfElevenPM(),
       const NotificationDetails(
         android: AndroidNotificationDetails(
@@ -80,12 +80,13 @@ class NotificationService {
   Future<void> scheduleMonthlyGoalReminder() async {
     final now = DateTime.now();
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
+    final nextMonth = DateTime(now.year, now.month + 1);
     
     if (now.day == lastDayOfMonth.day) {
       await _notifications.zonedSchedule(
         1,
-        '다음 달 목표를 설정해주세요',
-        '새로운 달을 위한 4가지 목표를 설정할 시간입니다',
+        '${nextMonth.month}월의 새로운 목표를 설정해보세요 ✨',
+        '다가오는 한 달을 위한 의미있는 목표를 준비해보세요',
         tz.TZDateTime.from(
           DateTime(now.year, now.month, now.day, 20), // 오후 8시
           tz.local,
@@ -133,5 +134,59 @@ class NotificationService {
   // 알림 취소
   Future<void> cancelAllNotifications() async {
     await _notifications.cancelAll();
+  }
+
+  // 테스트용 즉시 알림
+  Future<void> showTestNotification() async {
+    await _notifications.show(
+      999,
+      '알림 테스트 ✨',
+      '알림이 정상적으로 설정되었습니다',
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'test_notification',
+          '테스트 알림',
+          channelDescription: '알림 기능 테스트를 위한 채널입니다',
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(
+          sound: 'default.wav',
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+    );
+  }
+
+  // 테스트용 예약 알림 (10초 후)
+  Future<void> showTestScheduledNotification() async {
+    final scheduledTime = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 10));
+    
+    await _notifications.zonedSchedule(
+      998,
+      '예약 알림 테스트 ⏰',
+      '10초 후 알림이 정상적으로 전달되었습니다',
+      scheduledTime,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'test_scheduled_notification',
+          '테스트 예약 알림',
+          channelDescription: '알림 예약 기능 테스트를 위한 채널입니다',
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(
+          sound: 'default.wav',
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      androidAllowWhileIdle: true,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
   }
 } 

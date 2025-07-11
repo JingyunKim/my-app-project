@@ -202,10 +202,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SwitchListTile(
                 title: const Text('알림 설정'),
-                subtitle: const Text('매일 밤 목표 체크 알림을 받습니다'),
+                subtitle: const Text('매일 밤 11시에 알림을 받습니다'),
                 value: settings.notificationEnabled,
-                onChanged: (value) => _updateNotificationEnabled(settings, value),
+                onChanged: (bool value) {
+                  settings.notificationEnabled = value;
+                  if (value) {
+                    _notificationService.scheduleDailyReminder();
+                  } else {
+                    _notificationService.cancelAllNotifications();
+                  }
+                },
               ),
+              if (settings.notificationEnabled) ...[
+                const Divider(height: 1),
+                ListTile(
+                  title: const Text('알림 테스트'),
+                  subtitle: const Text('알림이 정상적으로 작동하는지 테스트합니다'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton(
+                        onPressed: () => _notificationService.showTestNotification(),
+                        child: const Text('즉시 알림'),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () => _notificationService.showTestScheduledNotification(),
+                        child: const Text('10초 후 알림'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               ListTile(
                 title: const Text('알림 시간'),
                 subtitle: Text(
