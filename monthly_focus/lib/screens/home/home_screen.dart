@@ -44,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
                 const Text('• 매월 25일부터 다음 달 목표를 설정할 수 있어요'),
                 const Text('• 매일 목표 달성 여부를 체크해보세요'),
-                const Text('• 달력에서 월간 달성 현황을 확인할 수 있어요'),
+                const Text('• 달력탭에서 월간 달성 현황을 확인할 수 있어요'),
                 const SizedBox(height: 16),
                 Text(
                   '지금 바로 이번 달의 목표를 설정해보세요!',
@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.of(context).pop();
                   _showGoalSetting();
                 },
-                child: const Text('목표 설정하기'),
+                child: const Text('이번달 목표 설정하기'),
               ),
             ],
           ),
@@ -77,20 +77,32 @@ class _HomeScreenState extends State<HomeScreen> {
     await goalProvider.loadTodayChecks();
   }
 
-  void _showGoalSetting() {
+  void _showGoalSetting({bool isForCurrentMonth = false}) {
     final goalProvider = context.read<GoalProvider>();
-    if (!goalProvider.canSetNextMonthGoals()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('다음 달 목표는 이번 달 마지막 날에만 설정할 수 있습니다'),
-        ),
-      );
-      return;
+    
+    if (isForCurrentMonth) {
+      if (!goalProvider.canSetCurrentMonthGoals()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('이번 달 목표는 1일부터 24일까지만 설정할 수 있습니다'),
+          ),
+        );
+        return;
+      }
+    } else {
+      if (!goalProvider.canSetNextMonthGoals()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('다음 달 목표는 이번 달 25일부터 설정할 수 있습니다'),
+          ),
+        );
+        return;
+      }
     }
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const GoalSettingScreen(),
+        builder: (context) => GoalSettingScreen(isForCurrentMonth: isForCurrentMonth),
       ),
     );
   }
@@ -119,8 +131,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCurrentMonthGoals(GoalProvider provider) {
     if (provider.monthlyGoals.isEmpty) {
-      return const Center(
-        child: Text('이번 달 목표가 없습니다'),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('이번 달 목표가 없습니다'),
+            const SizedBox(height: 16),
+            if (provider.canSetCurrentMonthGoals())
+              ElevatedButton.icon(
+                onPressed: () => _showGoalSetting(isForCurrentMonth: true),
+                icon: const Icon(Icons.add),
+                label: const Text('이번 달 목표 설정하기'),
+              ),
+          ],
+        ),
       );
     }
 
@@ -196,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 TextButton.icon(
-                  onPressed: _showGoalSetting,
+                  onPressed: () => _showGoalSetting(isForCurrentMonth: false),
                   icon: const Icon(Icons.add),
                   label: const Text('목표 설정'),
                 ),

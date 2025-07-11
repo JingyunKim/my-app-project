@@ -123,6 +123,28 @@ class GoalProvider with ChangeNotifier {
 
     await _db.insertGoal(goal);
     await loadMonthlyGoals();
+    await loadNextMonthGoals();
+  }
+
+  // 현재 월 목표 추가
+  Future<void> addCurrentMonthGoal(String title, String? emoji, int position) async {
+    final now = _now;
+    final currentMonth = DateTime(now.year, now.month, 1);
+
+    final goal = Goal(
+      month: currentMonth,
+      position: position,
+      title: title,
+      emoji: emoji,
+    );
+
+    await _db.insertGoal(goal);
+    
+    // 모든 관련 데이터 새로고침
+    await loadMonthlyGoals();
+    await loadTodayChecks();
+    _dailyChecksCache.clear(); // 달력 화면의 캐시 초기화
+    notifyListeners();
   }
 
   // 목표 체크 상태 업데이트
@@ -179,6 +201,25 @@ class GoalProvider with ChangeNotifier {
     
     // 25일 이후부터 설정 가능
     return now.day >= 25;
+  }
+
+  // 현재 월 목표 설정 가능 여부 확인
+  bool canSetCurrentMonthGoals() {
+    final now = _now;
+    final installDate = _storage.getInstallDate();
+    
+    // 목표가 이미 있으면 설정 불가
+    if (_monthlyGoals.isNotEmpty) {
+      return false;
+    }
+
+    // 설치 당월인 경우 항상 설정 가능
+    if (now.year == installDate.year && now.month == installDate.month) {
+      return true;
+    }
+    
+    // 1일부터 24일까지만 설정 가능
+    return now.day <= 24;
   }
 
   // 설정 업데이트

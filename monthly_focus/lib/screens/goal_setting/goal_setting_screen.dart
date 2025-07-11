@@ -21,7 +21,12 @@ import '../../providers/goal_provider.dart';
 import '../../widgets/goal/goal_input_field.dart';
 
 class GoalSettingScreen extends StatefulWidget {
-  const GoalSettingScreen({super.key});
+  final bool isForCurrentMonth;
+
+  const GoalSettingScreen({
+    super.key,
+    this.isForCurrentMonth = false,
+  });
 
   @override
   State<GoalSettingScreen> createState() => _GoalSettingScreenState();
@@ -56,11 +61,21 @@ class _GoalSettingScreenState extends State<GoalSettingScreen> {
 
     // 목표 저장
     for (int i = 0; i < 4; i++) {
-      await goalProvider.addGoal(
-        _controllers[i].text,
-        _emojis[i],
-        i + 1,
-      );
+      if (widget.isForCurrentMonth) {
+        // 현재 월의 목표 저장
+        await goalProvider.addCurrentMonthGoal(
+          _controllers[i].text,
+          _emojis[i],
+          i + 1,
+        );
+      } else {
+        // 다음 달 목표 저장
+        await goalProvider.addGoal(
+          _controllers[i].text,
+          _emojis[i],
+          i + 1,
+        );
+      }
     }
 
     if (mounted) {
@@ -68,11 +83,21 @@ class _GoalSettingScreenState extends State<GoalSettingScreen> {
     }
   }
 
+  String _getTitle() {
+    return widget.isForCurrentMonth ? '이번 달 목표 설정' : '다음 달 목표 설정';
+  }
+
+  String _getDescription() {
+    return widget.isForCurrentMonth
+        ? '이번 달에 집중할 4가지 목표를 입력해주세요'
+        : '다음 달에 집중할 4가지 목표를 입력해주세요';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('다음 달 목표 설정'),
+        title: Text(_getTitle()),
         actions: [
           TextButton(
             onPressed: _saveGoals,
@@ -84,9 +109,9 @@ class _GoalSettingScreenState extends State<GoalSettingScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            const Text(
-              '다음 달에 집중할 4가지 목표를 입력해주세요',
-              style: TextStyle(fontSize: 16),
+            Text(
+              _getDescription(),
+              style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 24),
             ...List.generate(4, (index) {
