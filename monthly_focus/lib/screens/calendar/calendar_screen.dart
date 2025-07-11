@@ -90,8 +90,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
     
     final goalProvider = context.read<GoalProvider>();
     goalProvider.loadDailyChecks(_selectedDay!).then((checks) {
-      _selectedChecks.value = checks;
+      if (mounted) {
+        setState(() {
+          _selectedChecks.value = checks;
+        });
+      }
     });
+  }
+
+  List<DailyCheck> _getChecksForDay(GoalProvider provider, DateTime day) {
+    final normalizedDay = DateTime(day.year, day.month, day.day);
+    final normalizedToday = DateTime(
+      AppDateUtils.getCurrentDate(context).year,
+      AppDateUtils.getCurrentDate(context).month,
+      AppDateUtils.getCurrentDate(context).day,
+    );
+    
+    if (normalizedDay.isAtSameMomentAs(normalizedToday)) {
+      return provider.todayChecks;
+    }
+    
+    return provider.getCachedDailyChecks(day);
   }
 
   @override
@@ -103,6 +122,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
       body: Consumer<GoalProvider>(
         builder: (context, provider, child) {
           _currentMonthGoals = provider.calendarMonthGoals;
+          
+          // 선택된 날짜가 오늘이면 todayChecks를 사용
+          if (_selectedDay != null && 
+              AppDateUtils.isSameDay(_selectedDay, AppDateUtils.getCurrentDate(context))) {
+            _selectedChecks.value = provider.todayChecks;
+          }
           
           if (_isLoading) {
             return const Center(
@@ -123,23 +148,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   availableCalendarFormats: const {
                     CalendarFormat.month: '월간',
                   },
-                  eventLoader: (day) {
-                    // 날짜를 정규화하여 비교
-                    final normalizedDay = DateTime(day.year, day.month, day.day);
-                    final normalizedToday = DateTime(
-                      _focusedDay.year,
-                      _focusedDay.month,
-                      _focusedDay.day,
-                    );
-                    
-                    // 오늘이면 todayChecks 사용 (실시간 업데이트를 위해)
-                    if (normalizedDay.isAtSameMomentAs(normalizedToday)) {
-                      return provider.todayChecks.where((check) => check.isCompleted).toList();
-                    }
-                    
-                    // 다른 날짜는 캐시된 데이터 사용
-                    return provider.getCachedDailyChecks(day).where((check) => check.isCompleted).toList();
-                  },
+                  eventLoader: (day) => _getChecksForDay(provider, day)
+                      .where((check) => check.isCompleted)
+                      .toList(),
                   onDaySelected: (selectedDay, focusedDay) {
                     if (!isSameDay(_selectedDay, selectedDay)) {
                       setState(() {
@@ -180,9 +191,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               const Divider(),
               Expanded(
-                child: ValueListenableBuilder<List<DailyCheck>>(
-                  valueListenable: _selectedChecks,
-                  builder: (context, checks, _) {
+                child: Consumer<GoalProvider>(
+                  builder: (context, provider, _) {
+                    final checks = _getChecksForDay(provider, _selectedDay ?? AppDateUtils.getCurrentDate(context));
+                    
                     if (_currentMonthGoals.isEmpty) {
                       return const Center(
                         child: Text('선택한 월의 목표가 없습니다'),
@@ -198,7 +210,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           (check) => check.goalId == goal.id,
                           orElse: () => DailyCheck(
                             goalId: goal.id!,
-                            date: _selectedDay!,
+                            date: _selectedDay ?? AppDateUtils.getCurrentDate(context),
                             isCompleted: false,
                           ),
                         );
@@ -221,6 +233,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 : Icons.check_circle_outline,
                             color: check.isCompleted ? Colors.green : Colors.grey,
                           ),
+                          onTap: () {
+                            provider.toggleGoalCheck(goal);
+                            _loadSelectedDayChecks();
+                          },
                         );
                       },
                     );
