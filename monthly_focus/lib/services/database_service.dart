@@ -113,4 +113,11 @@ class DatabaseService {
       whereArgs: [check.id],
     );
   }
+
+  // 데이터베이스 초기화
+  Future<void> clearAllData() async {
+    final db = await database;
+    await db.delete('daily_checks');
+    await db.delete('goals');
+  }
 } 

@@ -22,8 +22,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/notification_service.dart';
 import '../../services/storage_service.dart';
+import '../../services/database_service.dart'; // Added import for DatabaseService
 import '../../models/app_settings.dart';
 import '../../utils/date_utils.dart';
+import '../../providers/goal_provider.dart'; // Added import for GoalProvider
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -35,6 +37,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final NotificationService _notificationService = NotificationService();
   final StorageService _storageService = StorageService();
+  final DatabaseService _databaseService = DatabaseService();
 
   Future<void> _updateNotificationEnabled(AppSettings settings, bool value) async {
     settings.notificationEnabled = value;
@@ -91,6 +94,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _showResetConfirmDialog(String title, String message, Function() onConfirm) async {
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              onConfirm();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('초기화'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _resetAllData() async {
+    await _showResetConfirmDialog(
+      '전체 데이터 초기화',
+      '모든 목표와 체크 데이터, 앱 설정이 초기화되며\n앱 설치일이 현재 시점으로 변경됩니다.\n이 작업은 되돌릴 수 없습니다.',
+      () async {
+        await _storageService.clearAllSettings();
+        await _databaseService.clearAllData();
+        
+        // Provider 상태 초기화
+        if (mounted) {
+          // 설정 초기화
+          final settings = _storageService.loadSettings();
+          Provider.of<AppSettings>(context, listen: false)
+            ..notificationEnabled = settings.notificationEnabled
+            ..notificationTime = settings.notificationTime
+            ..resetTime = settings.resetTime
+            ..isTestMode = settings.isTestMode
+            ..testDate = settings.testDate;
+
+          // 목표 데이터 캐시 초기화
+          Provider.of<GoalProvider>(context, listen: false).clearAllData();
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('모든 데이터가 초기화되었습니다.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AppSettings>(
@@ -137,6 +199,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   trailing: const Icon(Icons.calendar_today),
                   onTap: () => _updateTestDate(settings),
                 ),
+              const Divider(),
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('데이터 관리', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              ListTile(
+                title: const Text('전체 데이터 초기화'),
+                subtitle: const Text('모든 데이터를 초기화합니다'),
+                leading: const Icon(Icons.delete_forever),
+                textColor: Colors.red,
+                iconColor: Colors.red,
+                onTap: _resetAllData,
+              ),
               const Divider(),
               AboutListTile(
                 icon: const Icon(Icons.info),

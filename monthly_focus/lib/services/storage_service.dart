@@ -65,4 +65,11 @@ class StorageService {
   Future<void> markWelcomeGuideAsShown() async {
     await _prefs.setBool(_welcomeShownKey, true);
   }
+
+  // 모든 설정 초기화
+  Future<void> clearAllSettings() async {
+    await _prefs.clear();
+    // 설치일을 현재 시점으로 업데이트
+    await _prefs.setString(_installDateKey, DateTime.now().toIso8601String());
+  }
 } 

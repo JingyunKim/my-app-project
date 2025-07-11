@@ -191,4 +191,14 @@ class GoalProvider with ChangeNotifier {
   Future<List<Goal>> getGoalsByMonth(DateTime month) async {
     return await _db.getGoalsByMonth(month);
   }
+
+  // 모든 데이터 초기화
+  void clearAllData() {
+    _monthlyGoals = [];
+    _nextMonthGoals = [];
+    _todayChecks = [];
+    _dailyChecksCache.clear();
+    _loadingDates.clear();
+    notifyListeners();
+  }
 } 
