@@ -163,12 +163,27 @@ class GoalProvider with ChangeNotifier {
     
     try {
       final checks = await _db.getDailyChecksByDate(date);
+      
+      // 현재 월의 체크 데이터도 업데이트
+      if (date.year == _currentMonth.year && date.month == _currentMonth.month) {
+        final existingChecks = _monthlyChecks.where((check) => 
+          check.date.year == date.year && 
+          check.date.month == date.month && 
+          check.date.day == date.day
+        ).toList();
+        
+        if (existingChecks.isEmpty) {
+          _monthlyChecks.addAll(checks);
+        }
+      }
+      
       _dailyChecksCache[key] = checks;
       _cacheTimestamps[key] = DateTime.now();
       notifyListeners();
       return checks;
     } catch (e) {
       print('Error loading daily checks: $e');
+      _loadingDates.remove(key);
       return [];
     }
   }
@@ -235,11 +250,43 @@ class GoalProvider with ChangeNotifier {
 
   // 특정 날짜의 체크 데이터를 가져옵니다.
   List<DailyCheck> getDailyChecksByDate(DateTime date) {
-    return _monthlyChecks.where((check) => 
+    final key = _getCacheKey(date);
+    
+    // 1. 먼저 캐시된 데이터 확인
+    if (_dailyChecksCache.containsKey(key)) {
+      final cachedChecks = _dailyChecksCache[key]!;
+      
+      // 캐시가 만료되었는지 확인
+      final timestamp = _cacheTimestamps[key];
+      if (timestamp != null && DateTime.now().difference(timestamp) <= cacheDuration) {
+        return cachedChecks;
+      }
+    }
+    
+    // 2. 현재 월의 체크 데이터에서 확인
+    final checksFromMonthly = _monthlyChecks.where((check) => 
       check.date.year == date.year && 
       check.date.month == date.month && 
       check.date.day == date.day
     ).toList();
+    
+    if (checksFromMonthly.isNotEmpty) {
+      // 찾은 데이터를 캐시에 저장
+      _dailyChecksCache[key] = checksFromMonthly;
+      _cacheTimestamps[key] = DateTime.now();
+      return checksFromMonthly;
+    }
+    
+    // 3. 데이터베이스에서 로드
+    if (!_loadingDates.contains(key)) {
+      _loadingDates.add(key);
+      loadDailyChecks(date).then((checks) {
+        _loadingDates.remove(key);
+      });
+    }
+    
+    // 로드 중인 동안 빈 리스트 반환
+    return [];
   }
 
   // 특정 월의 체크 데이터를 새로고침합니다.
@@ -247,6 +294,20 @@ class GoalProvider with ChangeNotifier {
     print('체크 데이터: ${month.year}년 ${month.month}월 데이터 새로고침');
     final checks = await _db.getDailyChecksByMonth(month);
     _monthlyChecks = checks;
+    
+    // 캐시 업데이트
+    for (var check in checks) {
+      final key = _getCacheKey(check.date);
+      final dayChecks = checks.where((c) => 
+        c.date.year == check.date.year && 
+        c.date.month == check.date.month && 
+        c.date.day == check.date.day
+      ).toList();
+      
+      _dailyChecksCache[key] = dayChecks;
+      _cacheTimestamps[key] = DateTime.now();
+    }
+    
     notifyListeners();
   }
 

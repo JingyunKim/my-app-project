@@ -88,11 +88,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
     setState(() {
       _currentMonthGoals = provider.calendarMonthGoals;
     });
+    
+    // 선택된 날짜의 체크 데이터도 함께 로드
+    if (_selectedDay != null) {
+      _loadSelectedDayChecks();
+    }
+    
     print('달력 화면: ${_focusedDay.year}년 ${_focusedDay.month}월 데이터 로드 완료 - 목표 ${_currentMonthGoals.length}개');
   }
 
   List<DailyCheck> _getChecksForDay(GoalProvider provider, DateTime day) {
-    return provider.getDailyChecksByDate(day);
+    final checks = provider.getDailyChecksByDate(day);
+    return checks;
   }
 
   void _loadSelectedDayChecks() {
@@ -102,9 +109,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final goalProvider = context.read<GoalProvider>();
     final checks = goalProvider.getDailyChecksByDate(_selectedDay!);
     
-    setState(() {
-      _selectedChecks.value = checks;
-    });
+    _selectedChecks.value = checks;
+    
+    // 체크 데이터가 비어있으면 자동으로 생성
+    if (checks.isEmpty && _currentMonthGoals.isNotEmpty) {
+      _selectedChecks.value = _currentMonthGoals.map((goal) => DailyCheck(
+        goalId: goal.id!,
+        date: _selectedDay!,
+        isCompleted: false,
+      )).toList();
+    }
   }
 
   @override
@@ -154,7 +168,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 currentDay: AppDateUtils.getCurrentDate(context),
                 selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                 calendarFormat: CalendarFormat.month,
-                startingDayOfWeek: StartingDayOfWeek.monday,
+                startingDayOfWeek: StartingDayOfWeek.sunday,  // 일요일부터 시작
                 availableCalendarFormats: const {
                   CalendarFormat.month: '월간',
                 },
@@ -200,11 +214,29 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
+                  weekendTextStyle: TextStyle(
+                    color: Color(0xFFFF6B6B),  // 주말 텍스트 색상 (일요일)
+                  ),
                   outsideDaysVisible: false,  // 현재 월에 속하지 않는 날짜 숨김
                 ),
                 headerStyle: const HeaderStyle(
                   formatButtonVisible: false,  // 포맷 변경 버튼 숨김
                   titleCentered: true,  // 제목 중앙 정렬
+                ),
+                calendarBuilders: CalendarBuilders(
+                  defaultBuilder: (context, day, focusedDay) {
+                    if (day.weekday == DateTime.saturday) {
+                      return Center(
+                        child: Text(
+                          '${day.day}',
+                          style: const TextStyle(
+                            color: Color(0xFF5C7CFA),  // 토요일 텍스트 색상 (파스텔 블루)
+                          ),
+                        ),
+                      );
+                    }
+                    return null;  // 기본 스타일 사용
+                  },
                 ),
               ),
               const Divider(),
