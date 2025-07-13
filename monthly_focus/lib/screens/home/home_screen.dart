@@ -18,6 +18,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _storage = StorageService();
   bool _isLoading = false;
+  DateTime? _lastLoadedDate;
+  bool _isInitialized = false;
 
   @override
   void initState() {
@@ -31,11 +33,19 @@ class _HomeScreenState extends State<HomeScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     print('오늘 화면: 의존성 변경 감지');
+    
+    if (!_isInitialized) {
+      print('오늘 화면: 아직 초기화되지 않음');
+      return;
+    }
+
     final currentDate = AppDateUtils.getCurrentDate(context);
     final provider = Provider.of<GoalProvider>(context);
     
-    // 날짜가 변경되었거나 데이터가 초기화된 경우에만 로드
-    if (provider.monthlyGoals.isEmpty || !AppDateUtils.isSameMonth(currentDate, provider.currentMonth)) {
+    // 날짜가 실제로 변경되었거나 데이터가 없는 경우에만 로드
+    if (_lastLoadedDate == null || 
+        !AppDateUtils.isSameDay(_lastLoadedDate!, currentDate) ||
+        provider.monthlyGoals.isEmpty) {
       print('오늘 화면: 날짜 변경 또는 데이터 초기화로 인한 데이터 리로드');
       _loadInitialData();
     }
@@ -53,6 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       await _loadGoals();
       await _showWelcomeGuideIfNeeded();
+      _lastLoadedDate = AppDateUtils.getCurrentDate(context);
+      _isInitialized = true;
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

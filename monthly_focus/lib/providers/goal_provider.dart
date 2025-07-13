@@ -250,6 +250,95 @@ class GoalProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // 현재 월의 목표를 저장합니다.
+  Future<void> addCurrentMonthGoal(String title, String emoji, int position) async {
+    print('목표 저장: 현재 월 목표 저장 - $emoji $title');
+    final goal = Goal(
+      title: title,
+      emoji: emoji,
+      position: position,
+      month: _currentMonth,
+    );
+    
+    // 기존 목표가 있으면 업데이트, 없으면 새로 추가
+    final existingGoal = _monthlyGoals.firstWhere(
+      (g) => g.position == position,
+      orElse: () => Goal(
+        title: '',
+        emoji: '',
+        position: position,
+        month: _currentMonth,
+      ),
+    );
+
+    Goal updatedGoal;
+    if (existingGoal.id != null) {
+      updatedGoal = existingGoal.copyWith(
+        title: title,
+        emoji: emoji,
+      );
+      await _db.updateGoal(updatedGoal);
+    } else {
+      final id = await _db.insertGoal(goal);
+      updatedGoal = goal.copyWith(id: id);
+    }
+
+    // 목표 리스트 업데이트
+    final index = _monthlyGoals.indexWhere((g) => g.position == position);
+    if (index >= 0) {
+      _monthlyGoals[index] = updatedGoal;
+    } else {
+      _monthlyGoals.add(updatedGoal);
+    }
+    
+    notifyListeners();
+  }
+
+  // 다음 달 목표를 저장합니다.
+  Future<void> addGoal(String title, String emoji, int position) async {
+    print('목표 저장: 다음 달 목표 저장 - $emoji $title');
+    final nextMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
+    final goal = Goal(
+      title: title,
+      emoji: emoji,
+      position: position,
+      month: nextMonth,
+    );
+    
+    // 기존 목표가 있으면 업데이트, 없으면 새로 추가
+    final existingGoal = _nextMonthGoals.firstWhere(
+      (g) => g.position == position,
+      orElse: () => Goal(
+        title: '',
+        emoji: '',
+        position: position,
+        month: nextMonth,
+      ),
+    );
+
+    Goal updatedGoal;
+    if (existingGoal.id != null) {
+      updatedGoal = existingGoal.copyWith(
+        title: title,
+        emoji: emoji,
+      );
+      await _db.updateGoal(updatedGoal);
+    } else {
+      final id = await _db.insertGoal(goal);
+      updatedGoal = goal.copyWith(id: id);
+    }
+
+    // 목표 리스트 업데이트
+    final index = _nextMonthGoals.indexWhere((g) => g.position == position);
+    if (index >= 0) {
+      _nextMonthGoals[index] = updatedGoal;
+    } else {
+      _nextMonthGoals.add(updatedGoal);
+    }
+    
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _dailyChecksCache.clear();
@@ -294,39 +383,6 @@ class GoalProvider with ChangeNotifier {
     _dailyChecksCache.clear();
     _cacheTimestamps.clear();
     _loadingDates.clear();
-    notifyListeners();
-  }
-
-  // 현재 월의 새로운 목표를 추가합니다.
-  Future<void> addCurrentMonthGoal(String title, String emoji, int position) async {
-    final goal = Goal(
-      title: title,
-      emoji: emoji,
-      position: position,
-      month: _currentMonth,
-    );
-    
-    final goalId = await _db.insertGoal(goal);
-    final updatedGoal = goal.copyWith(id: goalId);
-    
-    _monthlyGoals.add(updatedGoal);
-    notifyListeners();
-  }
-
-  // 다음 달의 새로운 목표를 추가합니다.
-  Future<void> addGoal(String title, String emoji, int position) async {
-    final nextMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
-    final goal = Goal(
-      title: title,
-      emoji: emoji,
-      position: position,
-      month: nextMonth,
-    );
-    
-    final goalId = await _db.insertGoal(goal);
-    final updatedGoal = goal.copyWith(id: goalId);
-    
-    _nextMonthGoals.add(updatedGoal);
     notifyListeners();
   }
 } 

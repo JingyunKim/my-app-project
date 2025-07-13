@@ -168,4 +168,17 @@ class DatabaseService {
     
     return List.generate(maps.length, (i) => DailyCheck.fromMap(maps[i]));
   }
+
+  // 목표를 업데이트합니다.
+  Future<void> updateGoal(Goal goal) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.update(
+        'goals',
+        goal.toMap(),
+        where: 'id = ?',
+        whereArgs: [goal.id],
+      );
+    });
+  }
 } 
