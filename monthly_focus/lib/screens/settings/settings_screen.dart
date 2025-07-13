@@ -19,6 +19,7 @@
  */
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';  // HapticFeedback을 위한 import
 import 'package:provider/provider.dart';
 import '../../services/notification_service.dart';
 import '../../services/storage_service.dart';
@@ -38,6 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final NotificationService _notificationService = NotificationService();
   final StorageService _storageService = StorageService();
   final DatabaseService _databaseService = DatabaseService();
+  bool _showDeveloperSettings = false;  // 개발자 설정 표시 여부
 
   Future<void> _updateNotificationEnabled(AppSettings settings, bool value) async {
     print('설정 화면: 알림 설정 변경 - ${value ? "활성화" : "비활성화"}');
@@ -197,6 +199,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('설정'),
+            actions: [
+              GestureDetector(
+                onLongPress: () {
+                  print('설정 화면: 개발자 설정 토글');
+                  setState(() {
+                    _showDeveloperSettings = !_showDeveloperSettings;
+                  });
+                  // 햅틱 피드백 제공
+                  HapticFeedback.heavyImpact();
+                  // 토스트 메시지 표시
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(_showDeveloperSettings ? '개발자 설정이 활성화되었습니다.' : '개발자 설정이 비활성화되었습니다.'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                behavior: HitTestBehavior.opaque,  // 투명 영역도 터치 가능하도록 설정
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8.0),
+                  child: SizedBox(
+                    width: 80,  // 너비 증가
+                    height: 56,  // 높이를 AppBar 높이에 맞춤
+                  ),
+                ),
+              ),
+            ],
           ),
           body: ListView(
             children: [
@@ -225,54 +254,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const Divider(),
               
-              // 개발자 설정 섹션
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('개발자 설정', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-              SwitchListTile(
-                title: const Text('테스트 모드'),
-                subtitle: const Text('날짜를 수동으로 설정할 수 있습니다'),
-                value: settings.isTestMode,
-                onChanged: (value) => _updateTestMode(settings, value),
-              ),
-              if (settings.isTestMode)
-                ListTile(
-                  title: const Text('테스트 날짜 설정'),
-                  subtitle: Text(
-                    settings.testDate?.toString().split(' ')[0] ?? '날짜를 선택해주세요',
-                  ),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: () => _updateTestDate(settings),
+              // 개발자 설정 섹션 - _showDeveloperSettings가 true일 때만 표시
+              if (_showDeveloperSettings) ...[
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('개발자 설정', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
-              if (settings.notificationEnabled)
-                ListTile(
-                  title: const Text('알림 테스트'),
-                  subtitle: const Text('알림이 정상적으로 작동하는지 테스트합니다'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextButton(
-                        onPressed: () => _notificationService.showTestNotification(),
-                        child: const Text('즉시 알림'),
-                      ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: () => _notificationService.showTestScheduledNotification(),
-                        child: const Text('10초 후 알림'),
-                      ),
-                    ],
-                  ),
+                SwitchListTile(
+                  title: const Text('테스트 모드'),
+                  subtitle: const Text('날짜를 수동으로 설정할 수 있습니다'),
+                  value: settings.isTestMode,
+                  onChanged: (value) => _updateTestMode(settings, value),
                 ),
-              ListTile(
-                title: const Text('전체 데이터 초기화'),
-                subtitle: const Text('모든 데이터를 초기화합니다'),
-                leading: const Icon(Icons.delete_forever),
-                textColor: Colors.red,
-                iconColor: Colors.red,
-                onTap: _resetAllData,
-              ),
-              const Divider(),
+                if (settings.isTestMode)
+                  ListTile(
+                    title: const Text('테스트 날짜 설정'),
+                    subtitle: Text(
+                      settings.testDate?.toString().split(' ')[0] ?? '날짜를 선택해주세요',
+                    ),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () => _updateTestDate(settings),
+                  ),
+                if (settings.notificationEnabled)
+                  ListTile(
+                    title: const Text('알림 테스트'),
+                    subtitle: const Text('현재 설정된 알림을 즉시 발송합니다'),
+                    onTap: () {
+                      _notificationService.showTestNotification();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('테스트 알림이 발송되었습니다.'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+                ListTile(
+                  title: const Text('데이터 초기화'),
+                  subtitle: const Text('모든 데이터를 초기화합니다'),
+                  onTap: _resetAllData,
+                ),
+                const Divider(),
+              ],
               
               // 앱 정보 섹션
               AboutListTile(
