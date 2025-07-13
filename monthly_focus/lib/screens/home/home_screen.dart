@@ -297,33 +297,21 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_month,
-                      size: 20,
-                      color: primaryColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${nextMonth.month}월의 목표',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
+                Icon(
+                  Icons.calendar_month,
+                  size: 20,
+                  color: primaryColor,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(width: 8),
                 Text(
-                  '25일부터 다음 달 목표를 설정할 수 있습니다',
+                  '${nextMonth.month}월의 목표',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -342,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 style: TextButton.styleFrom(
                   backgroundColor: primaryColor.withOpacity(0.1),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -361,10 +349,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 style: TextButton.styleFrom(
                   backgroundColor: primaryColor.withOpacity(0.1),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
+                  minimumSize: const Size(140, 0), // 버튼의 최소 너비 설정
                 ),
               ),
           ],
