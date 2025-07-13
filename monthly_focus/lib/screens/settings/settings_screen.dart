@@ -289,13 +289,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       );
                     },
                   ),
-                ListTile(
-                  title: const Text('데이터 초기화'),
-                  subtitle: const Text('모든 데이터를 초기화합니다'),
-                  onTap: _resetAllData,
-                ),
-                const Divider(),
-              ],
+                  ListTile(
+                    title: const Text(
+                      '데이터 초기화',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      '모든 데이터를 초기화합니다',
+                      style: TextStyle(
+                        color: Colors.red,
+                      ),
+                    ),
+                    leading: const Icon(
+                      Icons.delete_forever,
+                      color: Colors.red,
+                    ),
+                    onTap: _resetAllData,
+                  ),
+                  const Divider(),
+                ],
               
               // 앱 정보 섹션
               AboutListTile(

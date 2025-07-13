@@ -267,39 +267,104 @@ class _HomeScreenState extends State<HomeScreen> {
     final nextMonth = DateTime(now.year, now.month + 1);
     print('오늘 화면: 다음 달(${nextMonth.year}년 ${nextMonth.month}월) 목표 섹션 표시');
     
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceTint.withOpacity(0.05),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            primaryColor.withOpacity(0.15),
+            primaryColor.withOpacity(0.05),
+            primaryColor.withOpacity(0.15),
+          ],
+        ),
+        border: Border(
+          top: BorderSide(
+            color: primaryColor.withOpacity(0.2),
+            width: 1,
+          ),
+          bottom: BorderSide(
+            color: primaryColor.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            Text(
-              '${nextMonth.month}월의 목표',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_month,
+                      size: 20,
+                      color: primaryColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${nextMonth.month}월의 목표',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '25일부터 다음 달 목표를 설정할 수 있습니다',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+              ],
             ),
             const Spacer(),
             if (provider.nextMonthGoals.isEmpty)
               TextButton.icon(
                 onPressed: () => _showGoalSetting(isForCurrentMonth: false),
-                icon: const Icon(Icons.add, size: 18),
+                icon: const Icon(Icons.add, size: 20),
                 label: const Text(
                   '설정하기',
-                  style: TextStyle(fontSize: 14),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  backgroundColor: primaryColor.withOpacity(0.1),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               )
             else
               TextButton.icon(
                 onPressed: () => _showGoalSetting(isForCurrentMonth: false),
-                icon: const Icon(Icons.edit_note, size: 18),
+                icon: const Icon(Icons.edit_note, size: 20),
                 label: const Text(
                   '조회 및 수정하기',
-                  style: TextStyle(fontSize: 14),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  backgroundColor: primaryColor.withOpacity(0.1),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
           ],
