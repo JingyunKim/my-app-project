@@ -145,21 +145,29 @@ class _SplashScreenState extends State<SplashScreen>
                     Container(
                       width: 120,
                       height: 120,
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
+                      child: ClipRRect(
                         borderRadius: BorderRadius.circular(60),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.blue.withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.track_changes,  // focus_alt를 track_changes로 변경
-                        size: 60,
-                        color: Colors.blue,
+                        child: Image.asset(
+                          'assets/icons/Monthly Focus_2.png',
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(60),
+                              ),
+                              child: const Icon(
+                                Icons.track_changes,
+                                size: 60,
+                                color: Colors.blue,
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(height: 30),
