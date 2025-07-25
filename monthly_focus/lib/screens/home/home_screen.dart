@@ -63,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       await _loadGoals();
       await _showWelcomeGuideIfNeeded();
+      await _syncWidgetData();
       _lastLoadedDate = AppDateUtils.getCurrentDate(context);
       _isInitialized = true;
     } finally {
@@ -136,6 +137,14 @@ class _HomeScreenState extends State<HomeScreen> {
     print('오늘 화면: 목표 데이터 로드 완료');
   }
 
+  // 위젯 데이터를 동기화합니다.
+  Future<void> _syncWidgetData() async {
+    print('오늘 화면: 위젯 데이터 동기화 시작');
+    final goalProvider = context.read<GoalProvider>();
+    await goalProvider.syncWidgetData();
+    print('오늘 화면: 위젯 데이터 동기화 완료');
+  }
+
   // 목표 설정 화면을 표시합니다.
   void _showGoalSetting({bool isForCurrentMonth = false}) {
     print('오늘 화면: 목표 설정 화면 표시 시도 - ${isForCurrentMonth ? "이번 달" : "다음 달"}');
@@ -177,6 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ).then((_) {
       print('오늘 화면: 목표 설정 화면에서 복귀 - 데이터 리로드');
       _loadGoals();
+      _syncWidgetData();
     });
   }
 
@@ -248,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: GoalCheckCard(
             goal: goal,
             isChecked: check.isCompleted,
-            onToggle: () => provider.toggleGoalCheck(goal),
+            onToggle: () => provider.toggleGoalCheckWithWidgetSync(goal),
           ),
         );
       },

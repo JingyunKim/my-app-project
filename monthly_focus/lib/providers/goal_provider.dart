@@ -196,7 +196,7 @@ class GoalProvider with ChangeNotifier {
     final existingCheck = getDailyChecksByDate(today).firstWhere(
       (check) => check.goalId == goal.id,
       orElse: () => DailyCheck(
-        goalId: goal.id!,
+        goalId: goal.id ?? 0,
         date: today,
         isCompleted: false,
       ),
@@ -445,5 +445,22 @@ class GoalProvider with ChangeNotifier {
     _cacheTimestamps.clear();
     _loadingDates.clear();
     notifyListeners();
+  }
+
+  // 위젯과 데이터를 동기화합니다.
+  Future<void> syncWidgetData() async {
+    try {
+      final todayChecks = getDailyChecksByDate(_now);
+      await _storage.saveMonthlyGoalsForWidget(_monthlyGoals, todayChecks);
+      print('위젯 데이터 동기화 완료');
+    } catch (e) {
+      print('위젯 데이터 동기화 실패: $e');
+    }
+  }
+
+  // 목표 체크 상태 변경 시 위젯 데이터도 업데이트합니다.
+  Future<void> toggleGoalCheckWithWidgetSync(Goal goal) async {
+    await toggleGoalCheck(goal);
+    await syncWidgetData();
   }
 } 

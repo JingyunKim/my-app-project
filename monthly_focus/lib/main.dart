@@ -32,6 +32,10 @@ void main() async {
   // 앱 설정 초기화
   final settings = AppSettings();
   
+  // 저장소 서비스 초기화
+  final storage = StorageService();
+  await storage.init();
+  
   runApp(
     MultiProvider(
       providers: [
