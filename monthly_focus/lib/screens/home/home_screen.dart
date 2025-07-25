@@ -92,23 +92,36 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildWelcomeDialog() {
     print('오늘 화면: 웰컴 가이드 다이얼로그 생성');
     return AlertDialog(
-      title: const Text('한 달의 집중에 오신 것을 환영합니다! 🎉'),
+      title: const Text(
+        '한 달의 집중에 오신 것을 환영합니다! 🎉',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '매월 4가지 목표를 설정하고 달성해보세요.',
-            style: Theme.of(context).textTheme.bodyLarge,
+            style: TextStyle(fontSize: 14),
           ),
-          const SizedBox(height: 16),
-          const Text('• 매월 25일부터 다음 달 목표를 설정할 수 있어요'),
-          const Text('• 매일 목표 달성 여부를 체크해보세요'),
-          const Text('• 달력탭에서 월간 달성 현황을 확인할 수 있어요'),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          const Text(
+            '• 매월 25일부터 다음 달 목표를 설정할 수 있어요',
+            style: TextStyle(fontSize: 13),
+          ),
+          const Text(
+            '• 매일 목표 달성 여부를 체크해보세요',
+            style: TextStyle(fontSize: 13),
+          ),
+          const Text(
+            '• 달력탭에서 월간 달성 현황을 확인할 수 있어요',
+            style: TextStyle(fontSize: 13),
+          ),
+          const SizedBox(height: 12),
           Text(
             '지금 바로 이번 달의 목표를 설정해보세요!',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            style: TextStyle(
+              fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -121,7 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
             _storage.markWelcomeGuideAsShown();
             Navigator.of(context).pop();
           },
-          child: const Text('확인'),
+          child: const Text(
+            '확인',
+            style: TextStyle(fontSize: 14),
+          ),
         ),
       ],
     );

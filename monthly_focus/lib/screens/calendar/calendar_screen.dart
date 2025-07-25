@@ -247,6 +247,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     return null;  // 기본 스타일 사용
                   },
                   markerBuilder: (context, date, events) {
+                    if (events.isEmpty) return const SizedBox.shrink();
+                    
                     // 목표별 색상 매핑 (최대 4개)
                     final colors = [
                       Colors.red,
@@ -254,17 +256,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       Colors.yellow,
                       Colors.blue,
                     ];
-                    if (events.isEmpty) return const SizedBox.shrink();
-                    // events는 DailyCheck 리스트
-                    // _currentMonthGoals에서 goalId 순서대로 색상 매핑
+
+                    // Provider에서 직접 현재 월의 목표 데이터를 가져옵니다.
+                    final provider = context.read<GoalProvider>();
+                    final monthGoals = provider.calendarMonthGoals;
+                    
+                    // 목표 ID와 색상 매핑
                     final goalIdToColor = <int, Color>{};
-                    for (int i = 0; i < _currentMonthGoals.length && i < colors.length; i++) {
-                      goalIdToColor[_currentMonthGoals[i].id!] = colors[i];
+                    for (int i = 0; i < monthGoals.length && i < colors.length; i++) {
+                      if (monthGoals[i].id != null) {
+                        goalIdToColor[monthGoals[i].id!] = colors[i];
+                      }
                     }
+
                     // 완료된 체크의 goalId에 맞는 색상으로 닷트 표시
                     final dots = <Widget>[];
                     for (final check in events) {
-                      final color = goalIdToColor[check.goalId] ?? Colors.grey;
+                      // goalId가 매핑에 있으면 해당 색상 사용, 없으면 파란색 사용
+                      final color = goalIdToColor[check.goalId] ?? Colors.blue;
                       dots.add(Container(
                         width: 7,
                         height: 7,
@@ -275,6 +284,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         ),
                       ));
                     }
+                    
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: dots,
