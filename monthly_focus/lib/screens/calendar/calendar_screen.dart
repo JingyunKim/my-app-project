@@ -125,8 +125,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget build(BuildContext context) {
     print('달력 화면: 화면 빌드 시작');
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: const Text('월간 달성 현황'),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -161,6 +165,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
           return Column(
             children: [
+              // AppBar와 달력 사이 구분선
+              const Divider(
+                height: 1,
+                thickness: 1.0,
+              ),
               TableCalendar<DailyCheck>(
                 firstDay: DateTime.utc(2024, 1, 1),
                 lastDay: DateTime.utc(2025, 12, 31),

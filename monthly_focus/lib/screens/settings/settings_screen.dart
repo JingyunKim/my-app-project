@@ -197,8 +197,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Consumer<AppSettings>(
       builder: (context, settings, child) {
         return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
           appBar: AppBar(
             title: const Text('설정'),
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            elevation: 0,
+            surfaceTintColor: Colors.transparent,
             actions: [
               GestureDetector(
                 onLongPress: () {
@@ -227,98 +231,109 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
           ),
-          body: ListView(
+          body: Column(
             children: [
-              // 알림 설정 섹션
-              SwitchListTile(
-                title: const Text('알림 설정'),
-                subtitle: const Text('매일 밤 11시에 알림을 받습니다'),
-                value: settings.notificationEnabled,
-                onChanged: (bool value) {
-                  settings.notificationEnabled = value;
-                  if (value) {
-                    _notificationService.scheduleDailyReminder();
-                  } else {
-                    _notificationService.cancelAllNotifications();
-                  }
-                },
+              // AppBar와 설정 목록 사이 구분선
+              const Divider(
+                height: 1,
+                thickness: 1.0,
               ),
-              ListTile(
-                title: const Text('알림 시간'),
-                subtitle: Text(
-                  '${settings.notificationTime.hour}시 ${settings.notificationTime.minute}분',
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _updateNotificationTime(settings),
-                enabled: settings.notificationEnabled,
-              ),
-              const Divider(),
-              
-              // 개발자 설정 섹션 - _showDeveloperSettings가 true일 때만 표시
-              if (_showDeveloperSettings) ...[
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text('개발자 설정', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-                SwitchListTile(
-                  title: const Text('테스트 모드'),
-                  subtitle: const Text('날짜를 수동으로 설정할 수 있습니다'),
-                  value: settings.isTestMode,
-                  onChanged: (value) => _updateTestMode(settings, value),
-                ),
-                if (settings.isTestMode)
-                  ListTile(
-                    title: const Text('테스트 날짜 설정'),
-                    subtitle: Text(
-                      settings.testDate?.toString().split(' ')[0] ?? '날짜를 선택해주세요',
+              Expanded(
+                child: ListView(
+                  children: [
+                    // 알림 설정 섹션
+                    SwitchListTile(
+                      title: const Text('알림 설정'),
+                      subtitle: const Text('매일 밤 11시에 알림을 받습니다'),
+                      value: settings.notificationEnabled,
+                      onChanged: (bool value) {
+                        settings.notificationEnabled = value;
+                        if (value) {
+                          _notificationService.scheduleDailyReminder();
+                        } else {
+                          _notificationService.cancelAllNotifications();
+                        }
+                      },
                     ),
-                    trailing: const Icon(Icons.calendar_today),
-                    onTap: () => _updateTestDate(settings),
-                  ),
-                if (settings.notificationEnabled)
-                  ListTile(
-                    title: const Text('알림 테스트'),
-                    subtitle: const Text('현재 설정된 알림을 즉시 발송합니다'),
-                    onTap: () {
-                      _notificationService.showTestNotification();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('테스트 알림이 발송되었습니다.'),
-                          duration: Duration(seconds: 2),
+                    ListTile(
+                      title: const Text('알림 시간'),
+                      subtitle: Text(
+                        '${settings.notificationTime.hour}시 ${settings.notificationTime.minute}분',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _updateNotificationTime(settings),
+                      enabled: settings.notificationEnabled,
+                    ),
+                    const Divider(),
+                    
+                    // 개발자 설정 섹션 - _showDeveloperSettings가 true일 때만 표시
+                    if (_showDeveloperSettings) ...[
+                      const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text('개발자 설정', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      SwitchListTile(
+                        title: const Text('테스트 모드'),
+                        subtitle: const Text('날짜를 수동으로 설정할 수 있습니다'),
+                        value: settings.isTestMode,
+                        onChanged: (value) => _updateTestMode(settings, value),
+                      ),
+                      if (settings.isTestMode)
+                        ListTile(
+                          title: const Text('테스트 날짜 설정'),
+                          subtitle: Text(
+                            settings.testDate?.toString().split(' ')[0] ?? '날짜를 선택해주세요',
+                          ),
+                          trailing: const Icon(Icons.calendar_today),
+                          onTap: () => _updateTestDate(settings),
                         ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    title: const Text(
-                      '데이터 초기화',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      if (settings.notificationEnabled)
+                        ListTile(
+                          title: const Text('알림 테스트'),
+                          subtitle: const Text('현재 설정된 알림을 즉시 발송합니다'),
+                          onTap: () {
+                            _notificationService.showTestNotification();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('테스트 알림이 발송되었습니다.'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                        ),
+                        ListTile(
+                          title: const Text(
+                            '데이터 초기화',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          subtitle: const Text(
+                            '모든 데이터를 초기화합니다',
+                            style: TextStyle(
+                              color: Colors.red,
+                            ),
+                          ),
+                          leading: const Icon(
+                            Icons.delete_forever,
+                            color: Colors.red,
+                          ),
+                          onTap: _resetAllData,
+                        ),
+                        const Divider(),
+                      ],
+                    
+                    // 앱 정보 섹션
+                    AboutListTile(
+                      icon: const Icon(Icons.info),
+                      applicationName: '한 달의 집중',
+                      applicationVersion: '1.0.0',
+                      applicationLegalese: '© 2024 Monthly Focus\n\n만든이: 김진균\nEmail: wlsrbs321@naver.com',
+                      child: const Text('앱 정보'),
                     ),
-                    subtitle: const Text(
-                      '모든 데이터를 초기화합니다',
-                      style: TextStyle(
-                        color: Colors.red,
-                      ),
-                    ),
-                    leading: const Icon(
-                      Icons.delete_forever,
-                      color: Colors.red,
-                    ),
-                    onTap: _resetAllData,
-                  ),
-                  const Divider(),
-                ],
-              
-              // 앱 정보 섹션
-              AboutListTile(
-                icon: const Icon(Icons.info),
-                applicationName: '한 달의 집중',
-                applicationVersion: '1.0.0',
-                applicationLegalese: '© 2024 Monthly Focus\n\n만든이: 김진균\nEmail: wlsrbs321@naver.com',
-                child: const Text('앱 정보'),
+                  ],
+                ),
               ),
             ],
           ),
