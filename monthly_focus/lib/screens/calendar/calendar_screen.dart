@@ -246,6 +246,40 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     }
                     return null;  // 기본 스타일 사용
                   },
+                  markerBuilder: (context, date, events) {
+                    // 목표별 색상 매핑 (최대 4개)
+                    final colors = [
+                      Colors.red,
+                      Colors.green,
+                      Colors.yellow,
+                      Colors.blue,
+                    ];
+                    if (events.isEmpty) return const SizedBox.shrink();
+                    // events는 DailyCheck 리스트
+                    // _currentMonthGoals에서 goalId 순서대로 색상 매핑
+                    final goalIdToColor = <int, Color>{};
+                    for (int i = 0; i < _currentMonthGoals.length && i < colors.length; i++) {
+                      goalIdToColor[_currentMonthGoals[i].id!] = colors[i];
+                    }
+                    // 완료된 체크의 goalId에 맞는 색상으로 닷트 표시
+                    final dots = <Widget>[];
+                    for (final check in events) {
+                      final color = goalIdToColor[check.goalId] ?? Colors.grey;
+                      dots.add(Container(
+                        width: 7,
+                        height: 7,
+                        margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                        ),
+                      ));
+                    }
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: dots,
+                    );
+                  },
                 ),
               ),
               const Divider(),
