@@ -17,6 +17,7 @@
  */
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';  // SystemChrome을 사용하기 위해 추가
 import 'package:provider/provider.dart';
 import 'providers/goal_provider.dart';
 import 'screens/main_screen.dart';
@@ -25,10 +26,20 @@ import 'services/storage_service.dart';
 import 'services/notification_service.dart';
 import 'models/app_settings.dart';
 import 'utils/app_date_utils.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // 화면 세로 고정
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  
+  // 한국어 로케일 초기화
+  await initializeDateFormatting('ko_KR', null);
+
   // 앱 설정 초기화
   final settings = AppSettings();
   
@@ -54,6 +65,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: '한 달의 집중',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),

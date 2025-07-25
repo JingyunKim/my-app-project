@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
       print('오늘 화면: 웰컴 가이드 다이얼로그 표시');
       await showDialog(
         context: context,
-        barrierDismissible: false,
+        barrierDismissible: true,
         builder: (context) => _buildWelcomeDialog(),
       );
     }
@@ -117,12 +117,11 @@ class _HomeScreenState extends State<HomeScreen> {
       actions: [
         TextButton(
           onPressed: () {
-            print('오늘 화면: 웰컴 가이드 확인 및 목표 설정 화면으로 이동');
+            print('오늘 화면: 웰컴 가이드 확인');
             _storage.markWelcomeGuideAsShown();
             Navigator.of(context).pop();
-            _showGoalSetting(isForCurrentMonth: true);
           },
-          child: const Text('이번달 목표 설정하기'),
+          child: const Text('확인'),
         ),
       ],
     );
