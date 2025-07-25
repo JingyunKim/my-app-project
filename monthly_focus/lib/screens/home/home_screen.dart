@@ -191,29 +191,24 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // 날짜 섹션을 빌드합니다.
-  Widget _buildDateSection() {
+  // 현재 날짜의 월일을 반환합니다.
+  String _getCurrentMonthDay() {
     final now = AppDateUtils.getCurrentDate(context);
-    final dateFormat = DateFormat('yyyy년 M월 d일');
-    final dayFormat = DateFormat('E', 'ko_KR');
+    final dateFormat = DateFormat('M월 d일');
+    return dateFormat.format(now);
+  }
+
+  // Today 스타일의 날짜 위젯을 빌드합니다.
+  Widget _buildTodayDate() {
+    final now = AppDateUtils.getCurrentDate(context);
+    final dateFormat = DateFormat('M월 d일');
     
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // 날짜
-          Text(
-            dateFormat.format(now),
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 4),
-        ],
+    return Text(
+      dateFormat.format(now),
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+        fontWeight: FontWeight.w500,
+        fontSize: 15,
       ),
     );
   }
@@ -224,6 +219,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('오늘의 목표'),
+        centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: _buildTodayDate(),
+          ),
+        ],
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -234,12 +236,11 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context, provider, child) {
                 return Column(
                   children: [
-                    // AppBar와 날짜 섹션 사이 구분선
+                    // AppBar와 목표 섹션 사이 구분선
                     const Divider(
                       height: 1,
                       thickness: 1.0,
                     ),
-                    _buildDateSection(), // 날짜 섹션 추가
                     Expanded(
                       child: _buildCurrentMonthGoals(provider),
                     ),
