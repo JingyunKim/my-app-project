@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import '../providers/goal_provider.dart';
 import '../models/app_settings.dart';
 import '../services/storage_service.dart';
@@ -116,14 +115,10 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _loadAppVersion() async {
-    try {
-      final packageInfo = await PackageInfo.fromPlatform();
-      setState(() {
-        _appVersion = 'v${packageInfo.version}';
-      });
-    } catch (e) {
-      print('버전 정보 로드 실패: $e');
-    }
+    // App Store 심사 문제로 고정된 버전 사용
+    setState(() {
+      _appVersion = 'v1.0.1';
+    });
   }
 
   @override

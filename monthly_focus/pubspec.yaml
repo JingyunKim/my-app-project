@@ -2,7 +2,7 @@ name: monthly_focus
 
 description: "매월 4가지 목표를 설정하고 체크하는 습관 형성 앱"
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: '>=3.2.3 <4.0.0'
@@ -27,15 +27,15 @@ dependencies:
   # 푸시 알림
   flutter_local_notifications: ^16.3.0
 
-  # SNS 공유
-  share_plus: ^7.2.1
+  # SNS 공유 (App Store 심사 문제로 제거)
+  # share_plus: ^11.0.0
 
   # 이미지 저장
   path_provider: ^2.1.1
   screenshot: ^2.1.0
 
-  # 앱 설정
-  package_info_plus: ^5.0.1
+  # 앱 설정 (App Store 심사 문제로 package_info_plus 제거)
+  # package_info_plus: ^8.3.0
   flutter_native_timezone: ^2.0.0
 
   # UI 컴포넌트
