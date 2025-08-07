@@ -121,6 +121,33 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
+  // 목표 ID에 따른 색상을 반환하는 메서드
+  Color _getGoalColor(int goalId) {
+    final colors = [
+      Colors.red,
+      Colors.green,
+      Colors.yellow,
+      Colors.blue,
+    ];
+    
+    // 목표 ID와 색상 매핑
+    final goalIdToColor = <int, Color>{};
+    for (int i = 0; i < _currentMonthGoals.length && i < colors.length; i++) {
+      if (_currentMonthGoals[i].id != null) {
+        goalIdToColor[_currentMonthGoals[i].id!] = colors[i];
+      }
+    }
+    
+    return goalIdToColor[goalId] ?? Colors.blue;
+  }
+
+  bool _isDateSelectable(DateTime date) {
+    final today = AppDateUtils.getCurrentDate(context);
+    final todayStart = DateTime(today.year, today.month, today.day);
+    final dateStart = DateTime(date.year, date.month, date.day);
+    return dateStart.isBefore(todayStart) || dateStart.isAtSameMomentAs(todayStart);
+  }
+
   @override
   Widget build(BuildContext context) {
     print('달력 화면: 화면 빌드 시작');
@@ -249,31 +276,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   markerBuilder: (context, date, events) {
                     if (events.isEmpty) return const SizedBox.shrink();
                     
-                    // 목표별 색상 매핑 (최대 4개)
-                    final colors = [
-                      Colors.red,
-                      Colors.green,
-                      Colors.yellow,
-                      Colors.blue,
-                    ];
-
-                    // Provider에서 직접 현재 월의 목표 데이터를 가져옵니다.
-                    final provider = context.read<GoalProvider>();
-                    final monthGoals = provider.calendarMonthGoals;
-                    
-                    // 목표 ID와 색상 매핑
-                    final goalIdToColor = <int, Color>{};
-                    for (int i = 0; i < monthGoals.length && i < colors.length; i++) {
-                      if (monthGoals[i].id != null) {
-                        goalIdToColor[monthGoals[i].id!] = colors[i];
-                      }
-                    }
-
                     // 완료된 체크의 goalId에 맞는 색상으로 닷트 표시
                     final dots = <Widget>[];
                     for (final check in events) {
-                      // goalId가 매핑에 있으면 해당 색상 사용, 없으면 파란색 사용
-                      final color = goalIdToColor[check.goalId] ?? Colors.blue;
+                      final color = _getGoalColor(check.goalId);
                       dots.add(Container(
                         width: 7,
                         height: 7,
@@ -320,6 +326,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           ),
                         );
                         
+                        final isSelectable = _isDateSelectable(_selectedDay ?? AppDateUtils.getCurrentDate(context));
+                        
                         return ListTile(
                           leading: Text(goal.emoji ?? '🎯'),
                           title: Text(
@@ -328,17 +336,56 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               decoration: check.isCompleted
                                   ? TextDecoration.lineThrough
                                   : null,
-                              color:
-                                  check.isCompleted ? Colors.grey : Colors.black,
+                              color: check.isCompleted 
+                                  ? Colors.grey 
+                                  : isSelectable 
+                                      ? Colors.black 
+                                      : Colors.grey.withOpacity(0.5),
                             ),
                           ),
                           trailing: Icon(
                             check.isCompleted
                                 ? Icons.check_circle
                                 : Icons.check_circle_outline,
-                            color: check.isCompleted ? Colors.green : Colors.grey,
+                            color: check.isCompleted 
+                                ? _getGoalColor(goal.id!)
+                                : isSelectable 
+                                    ? Colors.grey 
+                                    : Colors.grey.withOpacity(0.3),
                           ),
-                          enabled: false,  // 클릭 비활성화
+                          onTap: isSelectable 
+                              ? () async {
+                                  // 체크 상태 토글
+                                  final newIsCompleted = !check.isCompleted;
+                                  print('달력 화면: 목표 체크 상태 변경 - ${goal.title} (${_selectedDay?.year}년 ${_selectedDay?.month}월 ${_selectedDay?.day}일) - ${newIsCompleted ? "완료" : "미완료"}');
+                                  
+                                  try {
+                                    await provider.toggleGoalCheckForDate(
+                                      goal,
+                                      _selectedDay ?? AppDateUtils.getCurrentDate(context),
+                                    );
+                                  } catch (e) {
+                                    print('달력 화면: 체크 상태 변경 오류 - $e');
+                                    // 오류 발생 시 스낵바 표시
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('체크 상태 변경에 실패했습니다: $e'),
+                                          duration: const Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                }
+                              : () {
+                                  // 미래 날짜 선택 시 알림
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('아직 오지 않은 날짜는 체크할 수 없습니다.'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
                         );
                       },
                     );

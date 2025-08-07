@@ -228,6 +228,59 @@ class GoalProvider with ChangeNotifier {
     await refreshMonthlyChecks(_currentMonth);
   }
 
+  // 특정 날짜의 목표 체크 상태를 토글하고 데이터베이스에 저장합니다.
+  Future<void> toggleGoalCheckForDate(Goal goal, DateTime date) async {
+    final targetDate = DateTime(date.year, date.month, date.day);
+    
+    final existingCheck = getDailyChecksByDate(targetDate).firstWhere(
+      (check) => check.goalId == goal.id,
+      orElse: () => DailyCheck(
+        goalId: goal.id ?? 0,
+        date: targetDate,
+        isCompleted: false,
+      ),
+    );
+
+    DailyCheck updatedCheck;
+    if (existingCheck.id == null) {
+      // 새로운 체크 추가
+      final newCheck = DailyCheck(
+        goalId: goal.id!,
+        date: targetDate,
+        isCompleted: true,
+      );
+      final checkId = await _db.insertDailyCheck(newCheck);
+      updatedCheck = newCheck.copyWith(id: checkId);
+      _monthlyChecks.add(updatedCheck);
+    } else {
+      // 기존 체크 상태 토글
+      updatedCheck = existingCheck.copyWith(
+        isCompleted: !existingCheck.isCompleted,
+      );
+      await _db.updateDailyCheck(updatedCheck);
+      
+      final index = _monthlyChecks.indexWhere((check) => check.id == existingCheck.id);
+      if (index >= 0) {
+        _monthlyChecks[index] = updatedCheck;
+      }
+    }
+
+    // 캐시 업데이트
+    final key = _getCacheKey(targetDate);
+    final dayChecks = _monthlyChecks.where((check) => 
+      check.date.year == targetDate.year && 
+      check.date.month == targetDate.month && 
+      check.date.day == targetDate.day
+    ).toList();
+    
+    _dailyChecksCache[key] = dayChecks;
+    _cacheTimestamps[key] = DateTime.now();
+
+    // 체크 데이터 변경 후 현재 월의 데이터를 새로고침
+    await refreshMonthlyChecks(_currentMonth);
+    notifyListeners();
+  }
+
   // 달력 화면의 월이 변경될 때 해당 월의 목표를 로드합니다.
   Future<void> changeCalendarMonth(DateTime month) async {
     await loadCalendarMonthGoals(month);
