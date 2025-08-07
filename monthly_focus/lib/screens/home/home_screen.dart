@@ -259,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: _buildCurrentMonthGoals(provider),
                     ),
-                    _buildMonthlyQuote(),
+                    _buildWeeklyQuote(),
                     const Divider(height: 1),
                     _buildNextMonthSection(provider),
                   ],
@@ -425,9 +425,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMonthlyQuote() {
+  // 현재 주의 명언을 표시합니다.
+  Widget _buildWeeklyQuote() {
     final now = AppDateUtils.getCurrentDate(context);
-    final quote = MonthlyQuotes.getQuoteForMonth(now);
+    final quote = MonthlyQuotes.getQuoteForWeek(now);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),

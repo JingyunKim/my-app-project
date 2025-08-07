@@ -1,5 +1,5 @@
 /*
- * MonthlyQuote: 월별 명언 데이터 모델
+ * MonthlyQuote: 주별 명언 데이터 모델
  * 
  * 주요 속성:
  * - quote: 명언 또는 사자성어
@@ -147,11 +147,24 @@ class MonthlyQuotes {
     ),
   ];
 
-  // 해당 월에 표시할 명언을 반환합니다.
-  static MonthlyQuote getQuoteForMonth(DateTime date) {
-    // 월을 인덱스로 사용하여 해당 월의 명언을 반환
-    // 년도가 바뀌면 순서를 다르게 하기 위해 년도를 더함
-    final index = (date.month - 1 + date.year) % quotes.length;
+  // 해당 주에 표시할 명언을 반환합니다.
+  static MonthlyQuote getQuoteForWeek(DateTime date) {
+    // 주를 인덱스로 사용하여 해당 주의 명언을 반환
+    // 년도와 주를 조합하여 순서를 다르게 하기 위해 년도와 주를 더함
+    final weekOfYear = _getWeekOfYear(date);
+    final index = (weekOfYear - 1 + date.year) % quotes.length;
     return quotes[index];
+  }
+
+  // 해당 날짜의 주차를 계산합니다.
+  static int _getWeekOfYear(DateTime date) {
+    // 1월 1일부터 해당 날짜까지의 일수를 계산
+    final startOfYear = DateTime(date.year, 1, 1);
+    final daysSinceStart = date.difference(startOfYear).inDays;
+    
+    // 주차 계산 (1월 1일이 포함된 주를 1주차로 계산)
+    final weekOfYear = ((daysSinceStart + startOfYear.weekday - 1) / 7).floor() + 1;
+    
+    return weekOfYear;
   }
 } 
