@@ -124,7 +124,7 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _loadAppVersion() async {
     // App Store 심사 문제로 고정된 버전 사용
     setState(() {
-      _appVersion = '1.0.2';
+      _appVersion = 'version 1.0.2';
     });
   }
 

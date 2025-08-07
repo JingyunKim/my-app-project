@@ -53,6 +53,15 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _currentIndex = index;
     });
+    
+    // 달력 탭을 선택했을 때 CalendarScreen을 새로 생성
+    if (index == 1) {
+      print('메인 화면: 달력 탭 선택 - CalendarScreen 새로 생성');
+      setState(() {
+        _screens[1] = const CalendarScreen();
+      });
+    }
+    
     print('메인 화면: 탭 변경 완료');
   }
 
@@ -60,10 +69,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     print('메인 화면: 화면 빌드 시작');
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: _screens[_currentIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: _handleTabChange,

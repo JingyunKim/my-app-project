@@ -40,10 +40,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void initState() {
     super.initState();
     print('달력 화면: 초기화 시작');
-    _selectedDay = AppDateUtils.getCurrentDate();
+    final currentDate = AppDateUtils.getCurrentDate();
+    _selectedDay = currentDate;
+    _focusedDay = currentDate;
     _selectedChecks = ValueNotifier([]);
     _loadInitialData();
-    print('달력 화면: 초기화 완료');
+    print('달력 화면: 초기화 완료 - 오늘 날짜(${currentDate.year}년 ${currentDate.month}월 ${currentDate.day}일)로 설정');
   }
 
   @override
@@ -52,8 +54,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     print('달력 화면: 의존성 변경 감지');
     final currentDate = AppDateUtils.getCurrentDate(context);
     
-    if (!AppDateUtils.isSameDay(_selectedDay, currentDate)) {
-      print('달력 화면: 날짜 변경으로 인한 데이터 리로드');
+    // 항상 오늘 날짜로 이동
+    if (!AppDateUtils.isSameDay(_selectedDay, currentDate) || !AppDateUtils.isSameDay(_focusedDay, currentDate)) {
+      print('달력 화면: 오늘 날짜로 이동 및 데이터 리로드');
       setState(() {
         _selectedDay = currentDate;
         _focusedDay = currentDate;
