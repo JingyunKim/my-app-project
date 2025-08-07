@@ -208,11 +208,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     shape: BoxShape.circle,
                   ),
                   todayDecoration: BoxDecoration(
-                    color: Color.fromARGB(255, 42, 115, 174),
+                    color: Color.fromARGB(255, 152, 165, 194), // 선택한 날짜 색상으로 변경
                     shape: BoxShape.circle,
                   ),
                   selectedDecoration: BoxDecoration(
-                    color: Color.fromARGB(255, 152, 165, 194),
+                    color: Color.fromARGB(255, 42, 115, 174), // 오늘 날짜 색상으로 변경
                     shape: BoxShape.circle,
                   ),
                   todayTextStyle: TextStyle(
