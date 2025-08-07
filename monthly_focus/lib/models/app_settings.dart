@@ -73,7 +73,7 @@ class AppSettings extends ChangeNotifier {
     bool isTestMode = false,
     DateTime? testDate,
   })  : _notificationEnabled = notificationEnabled,
-        _notificationTime = notificationTime ?? const TimeOfDay(hour: 23, minute: 0),
+        _notificationTime = notificationTime ?? const TimeOfDay(hour: 22, minute: 30),
         _resetTime = resetTime ?? const TimeOfDay(hour: 2, minute: 0),
         _isTestMode = isTestMode,
         _testDate = testDate;
@@ -99,8 +99,8 @@ class AppSettings extends ChangeNotifier {
     return AppSettings(
       notificationEnabled: map['notification_enabled'] as bool? ?? true,
       notificationTime: TimeOfDay(
-        hour: (map['notification_hour'] as int?) ?? 23,
-        minute: (map['notification_minute'] as int?) ?? 0,
+        hour: (map['notification_hour'] as int?) ?? 22,
+        minute: (map['notification_minute'] as int?) ?? 30,
       ),
       resetTime: TimeOfDay(
         hour: (map['reset_hour'] as int?) ?? 2,

@@ -257,10 +257,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       },
                     ),
                     ListTile(
-                      title: const Text('알림 시간'),
-                      subtitle: Text(
-                        AppDateUtils.formatTime12Hour(settings.notificationTime),
-                      ),
+                      title: const Text('알림 시간 변경'),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => _updateNotificationTime(settings),
                       enabled: settings.notificationEnabled,
