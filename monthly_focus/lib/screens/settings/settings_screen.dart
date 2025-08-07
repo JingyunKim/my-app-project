@@ -48,7 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     if (value) {
       print('설정 화면: 알림 스케줄 등록');
-      await _notificationService.scheduleDailyReminder();
+      await _notificationService.scheduleDailyReminder(notificationTime: settings.notificationTime);
     } else {
       print('설정 화면: 모든 알림 취소');
       await _notificationService.cancelAllNotifications();
@@ -60,16 +60,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: settings.notificationTime,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
-      print('설정 화면: 알림 시간 변경 - ${picked.hour}시 ${picked.minute}분');
+      print('설정 화면: 알림 시간 변경 - ${AppDateUtils.formatTime12Hour(picked)}');
       settings.notificationTime = picked;
       await _storageService.saveSettings(settings);
       
       if (settings.notificationEnabled) {
         print('설정 화면: 변경된 시간으로 알림 스케줄 업데이트');
-        await _notificationService.scheduleDailyReminder();
+        await _notificationService.scheduleDailyReminder(notificationTime: settings.notificationTime);
       }
     }
   }
@@ -244,21 +250,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     // 알림 설정 섹션
                     SwitchListTile(
                       title: const Text('알림 설정'),
-                      subtitle: const Text('매일 밤 11시에 알림을 받습니다'),
+                      subtitle: Text('매일 ${AppDateUtils.formatTime12Hour(settings.notificationTime)}에 알림을 받습니다'),
                       value: settings.notificationEnabled,
                       onChanged: (bool value) {
-                        settings.notificationEnabled = value;
-                        if (value) {
-                          _notificationService.scheduleDailyReminder();
-                        } else {
-                          _notificationService.cancelAllNotifications();
-                        }
+                        _updateNotificationEnabled(settings, value);
                       },
                     ),
                     ListTile(
                       title: const Text('알림 시간'),
                       subtitle: Text(
-                        '${settings.notificationTime.hour}시 ${settings.notificationTime.minute}분',
+                        AppDateUtils.formatTime12Hour(settings.notificationTime),
                       ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => _updateNotificationTime(settings),

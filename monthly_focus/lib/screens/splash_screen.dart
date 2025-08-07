@@ -5,6 +5,7 @@ import '../models/app_settings.dart';
 import '../services/storage_service.dart';
 import '../services/notification_service.dart';
 import 'main_screen.dart';
+import '../utils/app_date_utils.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -78,6 +79,12 @@ class _SplashScreenState extends State<SplashScreen>
 
       // 앱 설정 로드
       final settings = await storageService.loadSettings();
+      
+      // 알림이 활성화되어 있다면 설정된 시간으로 알림 스케줄
+      if (settings.notificationEnabled) {
+        print('스플래시 화면: 알림 스케줄 등록 - ${AppDateUtils.formatTime12Hour(settings.notificationTime)}');
+        await notificationService.scheduleDailyReminder(notificationTime: settings.notificationTime);
+      }
       
       // Provider 초기화
       final goalProvider = GoalProvider(settings);

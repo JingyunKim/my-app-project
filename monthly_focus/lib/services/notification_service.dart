@@ -11,10 +11,13 @@
  * - next_month_goals: 매월 마지막 주에 다음 달 목표 설정 알림
  */
 
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import '../models/app_settings.dart';
+import '../utils/app_date_utils.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -47,18 +50,26 @@ class NotificationService {
     tz.setLocalLocation(tz.getLocation(timeZoneName));
   }
 
-  // 매일 밤 11시 알림 설정
-  Future<void> scheduleDailyReminder() async {
+  // 매일 지정된 시간에 알림 설정
+  Future<void> scheduleDailyReminder({TimeOfDay? notificationTime}) async {
+    // 기존 알림 취소
+    await _notifications.cancel(0);
+    
+    final timeToUse = notificationTime ?? const TimeOfDay(hour: 23, minute: 0);
+    final scheduledDate = _nextInstanceOfTime(timeToUse);
+    
+    print('알림 서비스: 알림 예약 - ${AppDateUtils.formatTime12Hour(timeToUse)}');
+    
     await _notifications.zonedSchedule(
       0,
       '오늘 하루도 수고하셨어요! 🌙',
       '목표 달성 체크로 오늘 하루를 마무리해보세요',
-      _nextInstanceOfElevenPM(),
+      scheduledDate,
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'daily_reminder',
           '일일 체크 알림',
-          channelDescription: '매일 밤 11시에 목표 체크를 상기시켜주는 알림입니다',
+          channelDescription: '매일 지정된 시간에 목표 체크를 상기시켜주는 알림입니다',
           importance: Importance.high,
           priority: Priority.high,
         ),
@@ -113,21 +124,27 @@ class NotificationService {
     }
   }
 
-  // 다음 11시 시간 계산
-  tz.TZDateTime _nextInstanceOfElevenPM() {
+  // 다음 시간 계산
+  tz.TZDateTime _nextInstanceOfTime(TimeOfDay time) {
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduledDate = tz.TZDateTime(
       tz.local,
       now.year,
       now.month,
       now.day,
-      23, // 23시 (11 PM)
+      time.hour,
+      time.minute,
     );
+
+    print('알림 서비스: 현재 시간 - ${AppDateUtils.formatTime12Hour(TimeOfDay(hour: now.hour, minute: now.minute))}');
+    print('알림 서비스: 예약 시간 - ${AppDateUtils.formatTime12Hour(time)}');
 
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
+      print('알림 서비스: 예약 시간이 과거이므로 다음 날로 조정 - ${AppDateUtils.formatTime12Hour(TimeOfDay(hour: scheduledDate.hour, minute: scheduledDate.minute))}');
     }
 
+    print('알림 서비스: 최종 예약 시간 - ${scheduledDate.year}-${scheduledDate.month}-${scheduledDate.day} ${AppDateUtils.formatTime12Hour(TimeOfDay(hour: scheduledDate.hour, minute: scheduledDate.minute))}');
     return scheduledDate;
   }
 
