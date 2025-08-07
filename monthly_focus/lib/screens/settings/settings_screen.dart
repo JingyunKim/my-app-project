@@ -328,7 +328,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     AboutListTile(
                       icon: const Icon(Icons.info),
                       applicationName: '한 달의 집중',
-                      applicationVersion: '1.0.0',
+                      applicationVersion: '1.0.2',
                       applicationLegalese: '© 2024 Monthly Focus\n\n만든이: 김진균\nEmail: wlsrbs321@naver.com',
                       child: const Text('앱 정보'),
                     ),

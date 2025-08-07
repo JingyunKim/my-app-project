@@ -2,7 +2,7 @@ name: monthly_focus
 
 description: "매월 4가지 목표를 설정하고 체크하는 습관 형성 앱"
 publish_to: 'none'
-version: 1.0.1+2
+version: 1.0.2+3
 
 environment:
   sdk: '>=3.2.3 <4.0.0'
