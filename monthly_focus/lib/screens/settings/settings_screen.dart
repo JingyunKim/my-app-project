@@ -326,12 +326,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     
                     // 앱 정보 섹션
-                    AboutListTile(
-                      icon: const Icon(Icons.info),
-                      applicationName: '한 달의 집중',
-                      applicationVersion: '1.0.2',
-                      applicationLegalese: '© 2024 Monthly Focus\n\n만든이: 김진균\nEmail: wlsrbs321@naver.com',
-                      child: const Text('앱 정보'),
+                    ListTile(
+                      leading: const Icon(Icons.info),
+                      title: const Text('앱 정보'),
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('한 달의 집중'),
+                            content: const Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('버전 1.0.2'),
+                                SizedBox(height: 16),
+                                Text('© 2025 Monthly Focus'),
+                                SizedBox(height: 8),
+                                Text('만든이: chim'),
+                                SizedBox(height: 4),
+                                Text('Email: wlsrbs321@naver.com'),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text('닫기'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
